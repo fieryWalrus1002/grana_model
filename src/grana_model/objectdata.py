@@ -7,7 +7,7 @@ from math import pi
 import glob
 import numpy as np
 from dataclasses import dataclass
-
+import pickle
 import csv
 import pymunk
 
@@ -40,14 +40,17 @@ class ObjectData:
         sprite_path="src/grana_model/res/sprites/",
         shapes_path="src\\grana_model\\res\\compound_shapes\\",
     ):
+
         self.type_dict = {
             "LHCII": {
                 "obj_type": "LHCII",
                 "shapes_simple": glob.glob(
                     shapes_path + "07092021_1542_LHCII" + "*.csv"
                 ),
-                "shapes_compound": glob.glob(
-                    shapes_path + "27082021_1703_LHCII" + "*.csv"
+                "shapes_compound": pickle.load(
+                    open(
+                        "src/grana_model/res/compound_shapes/LHCII.pickle", "rb"
+                    )
                 ),
                 "sprite": image.load(os.path.join(sprite_path, "lhcii.png")),
                 "color": (0, 51, 0, 255),
@@ -57,8 +60,10 @@ class ObjectData:
                 "shapes_simple": glob.glob(
                     shapes_path + "07092021_1542_LHCII-monomer" + "*.csv"
                 ),
-                "shapes_compound": glob.glob(
-                    shapes_path + "27082021_1718_LHCII-monomer" + "*.csv"
+                "shapes_compound": pickle.load(
+                    open(
+                        "src/grana_model/res/compound_shapes/LHCII.pickle", "rb"
+                    )
                 ),
                 "sprite": image.load(
                     os.path.join(sprite_path, "lhcii_monomer.png")
@@ -70,8 +75,10 @@ class ObjectData:
                 "shapes_simple": glob.glob(
                     shapes_path + "07092021_1545_C2S2M2" + "*.csv"
                 ),
-                "shapes_compound": glob.glob(
-                    shapes_path + "27082021_1338_C2S2M2" + "*.csv"
+                "shapes_compound": pickle.load(
+                    open(
+                        "src/grana_model/res/compound_shapes/LHCII.pickle", "rb"
+                    )
                 ),
                 "sprite": image.load(os.path.join(sprite_path, "c2s2m2.png")),
                 "color": (0, 102, 0, 255),
@@ -81,8 +88,10 @@ class ObjectData:
                 "shapes_simple": glob.glob(
                     shapes_path + "07092021_1540_C2S2M" + "*.csv"
                 ),
-                "shapes_compound": glob.glob(
-                    shapes_path + "27082021_1615_C2S2M" + "*.csv"
+                "shapes_compound": pickle.load(
+                    open(
+                        "src/grana_model/res/compound_shapes/LHCII.pickle", "rb"
+                    )
                 ),
                 "sprite": image.load(os.path.join(sprite_path, "c2s2m.png")),
                 "color": (0, 153, 0, 255),
@@ -92,8 +101,10 @@ class ObjectData:
                 "shapes_simple": glob.glob(
                     shapes_path + "07092021_1547_C2S2" + "*.csv"
                 ),
-                "shapes_compound": glob.glob(
-                    shapes_path + "27082021_1619_C2S2" + "*.csv"
+                "shapes_compound": pickle.load(
+                    open(
+                        "src/grana_model/res/compound_shapes/LHCII.pickle", "rb"
+                    )
                 ),
                 "sprite": image.load(os.path.join(sprite_path, "c2s2.png")),
                 "color": (102, 204, 0, 255),
@@ -103,8 +114,10 @@ class ObjectData:
                 "shapes_simple": glob.glob(
                     shapes_path + "07092021_1541_C2" + "*.csv"
                 ),
-                "shapes_compound": glob.glob(
-                    shapes_path + "27082021_1631_C2" + "*.csv"
+                "shapes_compound": pickle.load(
+                    open(
+                        "src/grana_model/res/compound_shapes/LHCII.pickle", "rb"
+                    )
                 ),
                 "sprite": image.load(os.path.join(sprite_path, "c2.png")),
                 "color": (128, 255, 0, 255),
@@ -114,8 +127,10 @@ class ObjectData:
                 "shapes_simple": glob.glob(
                     shapes_path + "07092021_1542_C1" + "*.csv"
                 ),
-                "shapes_compound": glob.glob(
-                    shapes_path + "27082021_1701_C1" + "*.csv"
+                "shapes_compound": pickle.load(
+                    open(
+                        "src/grana_model/res/compound_shapes/LHCII.pickle", "rb"
+                    )
                 ),
                 "sprite": image.load(os.path.join(sprite_path, "c1.png")),
                 "color": (178, 255, 102, 255),
@@ -125,8 +140,10 @@ class ObjectData:
                 "shapes_simple": glob.glob(
                     shapes_path + "07092021_1542_C1" + "*.csv"
                 ),
-                "shapes_compound": glob.glob(
-                    shapes_path + "27082021_1701_C1" + "*.csv"
+                "shapes_compound": pickle.load(
+                    open(
+                        "src/grana_model/res/compound_shapes/LHCII.pickle", "rb"
+                    )
                 ),
                 "sprite": image.load(
                     os.path.join(sprite_path, "cp43_freecore.png")
@@ -138,8 +155,10 @@ class ObjectData:
                 "shapes_simple": glob.glob(
                     shapes_path + "14092021_1242_cytb6f" + "*.csv"
                 ),
-                "shapes_compound": glob.glob(
-                    shapes_path + "14092021_1242_cytb6f" + "*.csv"
+                "shapes_compound": pickle.load(
+                    open(
+                        "src/grana_model/res/compound_shapes/LHCII.pickle", "rb"
+                    )
                 ),
                 "sprite": image.load(os.path.join(sprite_path, "lhcii.png")),
                 "color": (51, 153, 255, 255),
@@ -154,9 +173,6 @@ class ObjectData:
             type_dict=self.type_dict,
             spawn_seed=spawn_seed,
         )
-
-    def pickle_dump_coordinates(self):
-        pass
 
     def _import_pos_data(self, file_path):
         """Imports the (x, y) positions from the csv data file provided in filename"""
@@ -213,7 +229,7 @@ class ObjectData:
     def convert_shape_csv_to_shape_list(self, obj_dict):
         return [
             pd.read_csv(file).values.tolist()
-            for file in obj_dict["shapes_compound"]
+            for file in obj_dict["shapes_simple"]
         ]
 
 
@@ -223,8 +239,14 @@ if __name__ == "__main__":
     type_dict = obj_data.type_dict
 
     for obj_type in type_dict.keys():
+        # for shape in type_dict[obj_type]["shapes_compound"]:
+        #     for pos in shape:
+        #         print(pos)
+
         # pickle this shit
         pickleit = obj_data.convert_shape_csv_to_shape_list(type_dict[obj_type])
+        pickle_name = obj_type + "_simple.pickle"
+        pickle.dump(pickleit, open(pickle_name, "wb"))
 
     # obj_data_dict = {
     #     {
