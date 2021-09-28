@@ -2,30 +2,9 @@ from typing import Any, Iterator
 import pandas as pd
 from random import random
 from pyglet import image
-
 from math import pi
-
 import numpy as np
-
 import pickle
-
-
-# @dataclass
-# class ObjectDataCollection:
-#     """represents an object, holding information for shape coordinates, name, angles, sprites etc.
-#     that you need for object instatiatiion in the spawner module"""
-#     obj_type: str
-#     pos_xy: list
-
-#         "pos_xy": list,  # [x, y] coordinates
-#         "angle": float, # angle in radians
-#         "sprite": ImageData object, a spirte for the object type
-#         "color": (0,0,0,255) RGBA color tuple
-#         "shapes_simple": list of str, # has the file paths for importing simple shapes,
-#         "shapes_compound": list of str, # has the file paths for importing compound shapes}
-#         }
-#         The list
-#     pass
 
 
 class ObjectData:
@@ -62,12 +41,8 @@ class ObjectData:
     def __generate_object_dict(self, obj_type: str):
         obj_dict = {
             "obj_type": obj_type,
-            "shapes_compound": self.__load_pickled_coordinates(
-                obj_type, shape_type="compound"
-            ),
-            "shapes_simple": self.__load_pickled_coordinates(
-                obj_type, shape_type="simple"
-            ),
+            "shapes_compound": self.__load_compound_shapes(obj_type),
+            "shapes_simple": self.__load_simple_shapes(obj_type),
             "sprite": image.load(f"{self.res_path}/sprites/{obj_type}.png"),
             "color": self.__object_colors_dict[obj_type],
         }
@@ -78,26 +53,13 @@ class ObjectData:
         imported_csv = pd.read_csv(file_path)
         return pd.DataFrame(imported_csv, columns=["x", "y"]).values.tolist()
 
-    def __load_pickled_coordinates(self, obj_type, shape_type):
-        if shape_type == "compound":
-            with open(f"{self.res_path}shapes/{obj_type}.pickle", "rb") as f:
-                export_coordinates = pickle.load(f)
-        else:
-            with open(
-                f"{self.res_path}shapes/{obj_type}_simple.pickle", "rb"
-            ) as f:
-                export_coordinates = pickle.load(f)
+    def __load_simple_shapes(self, obj_type):
+        with open(f"{self.res_path}shapes/{obj_type}_simple.pickle", "rb") as f:
+            return pickle.load(f)
 
-        return export_coordinates
-
-        #     "obj_type": "cytb6f",
-        #     "shapes_simple": glob.glob(
-        #         shapes_path + "14092021_1242_cytb6f" + "*.csv"
-        #     ),
-        #     "shapes_compound":
-        #     "sprite": image.load(os.path.join(sprite_path, "lhcii.png")),
-        #     "color": (51, 153, 255, 255),
-        # pass
+    def __load_compound_shapes(self, obj_type):
+        with open(f"{self.res_path}shapes/{obj_type}.pickle", "rb") as f:
+            return pickle.load(f)
 
     def __generate_object_list(
         self,
@@ -106,17 +68,20 @@ class ObjectData:
         spawn_seed=0,
     ) -> Iterator[Any]:
         """
-        Generates a list of dicts, each containing the data needed to create a PSII structure, in this format:
+        Generates a list of dicts, each containing the data needed to create a
+        PSII structure, in this format:
         {
         "obj_type": str,  # ex. "C2S2M2"
         "pos_xy": list,  # [x, y] coordinates
         "angle": float, # angle in radians
         "sprite": ImageData object, a spirte for the object type
         "color": (0,0,0,255) RGBA color tuple
-        "shapes_simple": list of str, # has the file paths for importing simple shapes,
-        "shapes_compound": list of str, # has the file paths for importing compound shapes}
+        "shapes_simple": simple shape coordinate list
+        "shapes_compound": list of shape coordinate pairs, one for each of the
+        various compound shapes that are needed to create the PSII structure
         }
-        The list will be an iterator object that you can use the next() function on to get the next item
+        The list will be an iterator object that you can use the next() function
+         on to get the next item
         """
         obj_list = []
         structure_types = ["C2S2M2", "C2S2M", "C2S2", "C2", "C1", "CP43"]
@@ -147,6 +112,7 @@ class ObjectData:
         return iter(obj_list)
 
     # def convert_shape_csv_to_shape_list(self, obj_dict):
+    # ''' used to turn csv files into a list of shape lists'''
     #     return [
     #         pd.read_csv(file).values.tolist()
     #         for file in obj_dict["shapes_simple"]
@@ -154,36 +120,4 @@ class ObjectData:
 
 
 if __name__ == "__main__":
-
-    obj_data = ObjectData(pos_csv_filename="082620_SEM_final_coordinates.csv")
-    type_dict = obj_data.type_dict
-
-    # for obj_type in type_dict.keys():
-    #     # for shape in type_dict[obj_type]["shapes_compound"]:
-    #     #     for pos in shape:
-    #     #         print(pos)
-
-    #     # pickle this shit
-    #     pickleit = obj_data.convert_shape_csv_to_shape_list(type_dict[obj_type])
-    #     pickle_name = obj_type + "_simple.pickle"
-    #     pickle.dump(pickleit, open(pickle_name, "wb"))
-
-    # obj_data_dict = {
-    #     {
-    #         "obj_type": obj_type,
-    #         "coordinates": obj_data.convert_shape_csv_to_shape_list(
-    #             type_dict[obj_type]
-    #         ),
-    #     }
-    #     for obj_type in type_dict.keys()
-    # }
-
-    # obj_dict = {
-    #     {
-    #         "obj_type": obj_type,
-    #         "coordinates": obj_data.convert_shape_csv_to_shape_list(
-    #             type_dict[obj_type]["shapes_compound"]
-    #         ),
-    #     }
-    #     for obj_type in type_dict.keys()
-    # }
+    pass
