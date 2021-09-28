@@ -1,7 +1,6 @@
 from pyglet.sprite import Sprite
 from math import degrees, sqrt
 from random import random
-from pandas import read_csv
 from pymunk import Vec2d, Body, moment_for_circle, Poly
 
 
@@ -67,9 +66,9 @@ class PSIIStructure:
         str_command = "self.body, "
 
         # find all the matching coordinate files
-        for i, file in enumerate(self.obj_dict["shapes_compound"]):
+        for i, shape_coordinates in enumerate(self.obj_dict["shapes_compound"]):
 
-            shape_coordinates = read_csv(file).values.tolist()
+            # shape_coordinates = read_csv(file).values.tolist()
 
             # create the shape
             my_shape = Poly(self.body, vertices=shape_coordinates)
