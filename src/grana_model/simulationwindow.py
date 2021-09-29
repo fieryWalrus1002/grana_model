@@ -5,8 +5,7 @@ from pyglet.gl import glTranslatef, glScalef
 from pyglet.window import key
 from math import sqrt
 from math import pi
-
-# from pymunk.pyglet_util import DrawOptions
+import pymunk
 
 
 class SimulationWindow(pyglet.window.Window):
@@ -33,6 +32,7 @@ class SimulationWindow(pyglet.window.Window):
         self.collision_observer = collision_observer
         self.diffusion_handler = diffusion_handler
         self.sprite_handler = sprite_handler
+        self.options = pymunk.SpaceDebugDrawOptions()
 
         self.fps_display = pyglet.window.FPSDisplay(window=self)
 
@@ -68,21 +68,7 @@ class SimulationWindow(pyglet.window.Window):
         self.sel_radius = 0.0  # holds the current radius selected for exporting a subset of objects
 
         # start the simulation by instantiating the objects
-        self.obstacle_list, self.particle_list = self.setup_model()
-
-    def setup_model(self, psii_only=False):
-        """instantiates particles and obstacles according to desires"""
-        obstacle_list = self.spawner.spawn_psii(
-            space=self.space, batch=self.batch
-        )
-        particle_list = self.spawner.spawn_particles(
-            space=self.space, batch=self.batch
-        )
-
-        if psii_only:
-            return obstacle_list, []
-        else:
-            return obstacle_list, particle_list
+        self.obstacle_list, self.particle_list = self.spawner.setup_model()
 
     # window.get_size():
     def get_nm_coordinates(self, pyg_pos: tuple[float, float]):
@@ -376,6 +362,8 @@ class SimulationWindow(pyglet.window.Window):
         # scoreboard.draw(label_pos=[20, window_height - 35])
         self.timer.draw_elapsed_time(label_pos=[20, self.window_height - 20])
 
-        self.sprite_handler.draw(self.obstacle_list, batch=self.batch)
-
-        # self.space.debug_draw(DrawOptions())
+        if self.sprite_handler.debug_draw == 0:
+            self.space.debug_draw(self.options)
+            self.batch.draw()
+        else:
+            self.sprite_handler.draw(self.obstacle_list, batch=self.batch)

@@ -1,3 +1,5 @@
+from pyglet.graphics import Batch
+from pymunk.space import Space
 from grana_model.psiistructure import PSIIStructure
 from grana_model.particle import Particle
 from grana_model.objectdata import ObjectData
@@ -9,13 +11,22 @@ class Spawner:
     """handles instantiation of objects into the simulation window, and for now
     has a random_pos_in_circle function because where else should it go"""
 
-    def __init__(self, object_data: ObjectData):
+    def __init__(
+        self,
+        object_data: ObjectData,
+        shape_type: str,
+        space: Space,
+        batch: Batch,
+        spawn_type: str,
+    ):
         self.object_data = object_data
         self.particle_count = 1000
         self.ratio_free_LHC = 2.00  # Helmut says "Assuming that you have 212 PSII (dimer =C2) particles then LHCII should be 424 (2xPSII)"
-
-    # 083021: Helmut says cyt b6f 70 (1/3 x PSII)
-    num_cytb6f = 70
+        self.num_cytb6f = 70  # 083021: Helmut says cyt b6f 70 (1/3 x PSII)
+        self.shape_type = shape_type
+        self.spawn_type = spawn_type
+        self.space = space
+        self.batch = batch
 
     def random_pos_in_circle(self, max_radius, center):
         rand_roll = random() + random()
@@ -35,7 +46,7 @@ class Spawner:
         for later usage in the simulation model"""
         # iterate throuhg the obj_iter and instantiate a psii_structure for each one
         object_list = [
-            PSIIStructure(space, obj, batch)
+            PSIIStructure(space, obj, batch, self.shape_type)
             for obj in self.object_data.object_list
         ]
 
@@ -60,6 +71,16 @@ class Spawner:
         ]
 
         return object_list
+
+    def setup_model(self):
+        """instantiates particles and obstacles according to desires"""
+        obstacle_list = self.spawn_psii(space=self.space, batch=self.batch)
+        particle_list = self.spawn_particles(space=self.space, batch=self.batch)
+
+        if self.spawn_type == "psii_only":
+            return obstacle_list, []
+        else:
+            return obstacle_list, particle_list
 
 
 #         for i, pos_xy in enumerate(self.object_data.pos_xy):

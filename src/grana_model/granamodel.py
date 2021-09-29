@@ -11,18 +11,26 @@ from grana_model.simulationwindow import SimulationWindow
 
 
 def main():
+    my_space = pymunk.Space()
+    my_batch = pyglet.graphics.Batch()
+    my_spawner = Spawner(
+        object_data=ObjectData(
+            pos_csv_filename="082620_SEM_final_coordinates.csv"
+        ),
+        spawn_type="psii_only",
+        shape_type="simple",
+        space=my_space,
+        batch=my_batch,
+    )
+
     window = SimulationWindow(
         width=450,
         height=450,
         resizable=True,
         window_offset=(int(0.25 * 3440), int(0.05 * 1440)),
-        batch=pyglet.graphics.Batch(),
-        space=pymunk.Space(),
-        spawner=Spawner(
-            object_data=ObjectData(
-                pos_csv_filename="082620_SEM_final_coordinates.csv"
-            )
-        ),
+        batch=my_batch,
+        space=my_space,
+        spawner=my_spawner,
         timer=SimulationTimer(),
         scoreboard=Scoreboard(),
         collision_observer=CollisionObserver(),

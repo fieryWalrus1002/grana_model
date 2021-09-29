@@ -1,11 +1,19 @@
 from pyglet.sprite import Sprite
 from math import degrees, sqrt
 from random import random
-from pymunk import Vec2d, Body, moment_for_circle, Poly
+from pymunk import Vec2d, Body, moment_for_circle, Poly, Space
+from pyglet.graphics import Batch
 
 
 class PSIIStructure:
-    def __init__(self, space, obj_dict, batch, mass=100):
+    def __init__(
+        self,
+        space: Space,
+        obj_dict: dict,
+        batch: Batch,
+        shape_type: str,
+        mass=100,
+    ):
         self.obj_dict = obj_dict
         self.type = obj_dict["obj_type"]
         self.origin_xy = obj_dict["pos"]
@@ -33,7 +41,7 @@ class PSIIStructure:
         )
 
         # create the shapes and add them to the space
-        shape_list, shape_str = self._create_shape_string()
+        shape_list, shape_str = self._create_shape_string(shape_type=shape_type)
         eval(shape_str)
 
         # create the sprite
@@ -55,9 +63,9 @@ class PSIIStructure:
         self.sprite.rotation = degrees(-self.body.angle)
         # obstacle_dict["sprite_list"].append(self.sprite)
 
-    def _create_shape_string(self):
+    def _create_shape_string(self, shape_type: str):
         """create a shape_string that when provided as
-        an argument to eval(), will create all the compound
+        an argument to eval(), will create all the compound or simple
         shapes needed to define complex structures and
         add them to the space along with the object body"""
 
@@ -65,8 +73,13 @@ class PSIIStructure:
         shape_list = []
         str_command = "self.body, "
 
+        if shape_type == "simple":
+            coord_list = self.obj_dict["shapes_simple"]
+        else:
+            coord_list = self.obj_dict["shapes_compound"]
+
         # find all the matching coordinate files
-        for i, shape_coordinates in enumerate(self.obj_dict["shapes_compound"]):
+        for i, shape_coordinates in enumerate(coord_list):
 
             # shape_coordinates = read_csv(file).values.tolist()
 
@@ -172,7 +185,7 @@ class PSIIStructure:
 
         # move in a direction but end within the tether distance
         # body.position.x and body.position.y can be modified, but the new position has to be within the distance of 1nm in any direction from the origin point.
-        # a new point must be within tether_radius of tether_point
+        # a new point must be within tether_radius of tether_pointFcircle
         x0, y0 = self.origin_xy
         start_pos = self.body.position
         tether_radius = 1

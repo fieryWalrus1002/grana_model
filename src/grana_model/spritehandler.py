@@ -11,7 +11,7 @@ class SpriteHandler:
         self.debug_draw += 1
 
         if self.debug_draw > 2:
-            self.debug_draw = 1
+            self.debug_draw = 0
 
         print(f"debug_draw: {self.debug_draw}")
 
@@ -37,5 +37,3 @@ class SpriteHandler:
                     self.sprite_scale_factor, self.rotation_factor
                 )
             batch.draw()
-            return True
-        return False
