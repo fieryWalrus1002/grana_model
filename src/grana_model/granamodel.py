@@ -1,5 +1,6 @@
 import pymunk
 import pyglet
+from grana_model.collisionhandler import CollisionHandler
 from grana_model.simulationtimer import SimulationTimer
 from grana_model.scoreboard import Scoreboard
 from grana_model.diffusionhandler import DiffusionHandler
@@ -22,6 +23,7 @@ def main():
         space=my_space,
         batch=my_batch,
     )
+    collision_handler = CollisionHandler(my_space)
 
     window = SimulationWindow(
         width=450,
@@ -36,6 +38,7 @@ def main():
         collision_observer=CollisionObserver(),
         diffusion_handler=DiffusionHandler(),
         sprite_handler=SpriteHandler(),
+        collision_handler=collision_handler,
     )
 
     # fps_display = pyglet.window.FPSDisplay(window=window)

@@ -1,61 +1,63 @@
-import os
-import glob
-from pyglet import image
-import pickle
+"""Showcase what the output of pymunk.pyglet_util draw methods will look like.
+See pygame_util_demo.py for a comparison to pygame.
+"""
+
+__docformat__ = "reStructuredText"
+
+import pyglet
+import pymunk
+import pymunk.pyglet_util
 
 
-class TestClass:
-    def __init__(self):
+window = pyglet.window.Window(1000, 700, vsync=False)
+space = pymunk.Space()
+space.gravity = -9000.0, -900.0
+draw_options = pymunk.pyglet_util.DrawOptions()
 
-        self.res_path = "src/grana_model/res/"
-        self.object_colors_dict = {
-            "LHCII": (0, 51, 0, 255),  # darkest green
-            "LHCII_monomer": (0, 75, 0, 255),  # darkest green
-            "C2S2M2": (0, 102, 0, 255),
-            "C2S2M": (0, 153, 0, 255),
-            "C2S2": (102, 204, 0, 255),
-            "C2": (128, 255, 0, 255),
-            "C1": (178, 255, 102, 255),  # lightest green
-            "CP43": (178, 255, 103, 255),  # same coordinates as C1, same color
-            "cytb6f": (51, 153, 255, 255),  # light blue
-        }
+b = pymunk.Body(100, 10, body_type=pymunk.Body.DYNAMIC)
 
-    def __load_pickled_coordinates(self, obj_type, shape_type):
-        if shape_type == "compound":
-            export_coordinates = pickle.load(
-                open(
-                    f"{self.res_path}shapes/{obj_type}.pickle",
-                    "rb",
-                )
-            )
-        else:
-            export_coordinates = pickle.load(
-                open(
-                    f"{self.res_path}shapes/{obj_type}_simple.pickle",
-                    "rb",
-                )
-            )
-        return export_coordinates
+c1 = pymunk.Circle(b, 10)
 
-    def generate_object_dict(self, obj_type: str):
-        obj_dict = {
-            "obj_type": obj_type,
-            "shapes_compound": self.__load_pickled_coordinates(
-                obj_type, shape_type="compound"
-            ),
-            "shapes_simple": self.__load_pickled_coordinates(
-                obj_type, shape_type="simple"
-            ),
-            "sprites": image.load(f"{self.res_path}/sprites/{obj_type}.png"),
-            "color": self.object_colors_dict.get(obj_type),
-        }
-        return obj_dict
+b.position = (500, 700)
+space.add(b, c1)
 
 
-if __name__ == "__main__":
-    test_class = TestClass()
+textbatch = pyglet.graphics.Batch()
+pyglet.text.Label(
+    "Demo example of shapes drawn by pyglet_util.draw()",
+    x=5,
+    y=5,
+    batch=textbatch,
+    color=(100, 100, 100, 255),
+)
+batch = pyglet.graphics.Batch()
 
-    type_dict = {
-        obj_type: test_class.generate_object_dict(obj_type)
-        for obj_type in test_class.object_colors_dict.keys()
-    }
+# otherwise save screenshot wont work
+_ = pyglet.window.FPSDisplay(window)
+
+
+@window.event
+def update():
+    global space
+    space.step(1 / 60)
+
+
+@window.event
+def on_draw():
+    pyglet.gl.glClearColor(255, 255, 255, 255)
+    window.clear()
+    space.debug_draw(draw_options)
+    textbatch.draw()
+    space.step(1)
+
+
+@window.event
+def on_key_press(symbol, modifiers):
+    if symbol == pyglet.window.key.P:
+        pyglet.image.get_buffer_manager().get_color_buffer().save(
+            "pyglet_util_demo.png"
+        )
+
+
+pyglet.clock.schedule_interval(window.update, 1.0 / 60.0)
+pyglet.app.run()

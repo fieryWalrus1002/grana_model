@@ -52,13 +52,10 @@ class Spawner:
 
         return object_list
 
-    def spawn_particles(self, space, batch=None, k=None):
+    def spawn_particles(self, space, batch=None):
         """Instantiates particles into the simulation space and returns a list
         of the particles for later usage in the simulation model
         """
-        if k is None:
-            k = self.particle_count
-
         object_list = [
             Particle(
                 space=space,
@@ -67,19 +64,22 @@ class Spawner:
                     max_radius=200, center=(200, 200)
                 ),
             )
-            for _ in range(0, k)
+            for _ in range(0, self.particle_count)
         ]
 
         return object_list
 
-    def setup_model(self):
+    def setup_model(self, num_particles=0):
         """instantiates particles and obstacles according to desires"""
+
         obstacle_list = self.spawn_psii(space=self.space, batch=self.batch)
-        particle_list = self.spawn_particles(space=self.space, batch=self.batch)
 
         if self.spawn_type == "psii_only":
             return obstacle_list, []
         else:
+            particle_list = self.spawn_particles(
+                space=self.space, batch=self.batch
+            )
             return obstacle_list, particle_list
 
 

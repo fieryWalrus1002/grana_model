@@ -6,6 +6,7 @@ from pyglet.window import key
 from math import sqrt
 from math import pi
 import pymunk
+import pymunk.pyglet_util
 
 
 class SimulationWindow(pyglet.window.Window):
@@ -19,6 +20,7 @@ class SimulationWindow(pyglet.window.Window):
         collision_observer,
         diffusion_handler,
         sprite_handler,
+        collision_handler,
         batch,
         *args,
         **kwargs,
@@ -32,8 +34,8 @@ class SimulationWindow(pyglet.window.Window):
         self.collision_observer = collision_observer
         self.diffusion_handler = diffusion_handler
         self.sprite_handler = sprite_handler
-        self.options = pymunk.SpaceDebugDrawOptions()
-
+        self.options = pymunk.pyglet_util.DrawOptions()
+        self.collision_handler = collision_handler
         self.fps_display = pyglet.window.FPSDisplay(window=self)
 
         self.set_location(window_offset[0], window_offset[1])
@@ -42,11 +44,7 @@ class SimulationWindow(pyglet.window.Window):
         # self.options = DrawOptions(batch = my_batch)
         self.grana_radius = 200.0
         self.grana_origin = (200.0, 200.0)
-        self.overlap_handler = self.space.add_default_collision_handler()
-        self.overlap_handler.begin = self.coll_begin
-        self.overlap_handler.pre_solve = self.coll_pre
-        self.overlap_handler.post_solve = self.coll_post
-        self.overlap_handler.separate = self.coll_sep
+
         # openGL translation variables
         self.scale_factor = (1.0, 1.0, 0.0)
         self.delta_pos = (0.0, 0.0, 0.0)
@@ -85,25 +83,6 @@ class SimulationWindow(pyglet.window.Window):
 
         return (x0, y0)
 
-    def coll_begin(self, arbiter, space, data):
-        self.handle_overlap(arbiter)
-        return True
-
-    def coll_pre(self, arbiter, space, data):
-        return True
-
-    def coll_post(self, arbiter, space, data):
-        self.handle_overlap(arbiter)
-
-    def coll_sep(self, arbiter, space, data):
-        pass
-        # for shape in arbiter.shapes:
-        #     if shape.body in self.collision_list:
-        #         self.collision_list.remove(shape.body)
-
-    def handle_overlap(self, arbiter):
-        self.collision_observer.collision()
-        pass
         # for point in arbiter.contact_point_set.points:
         #     if point.distance < 0:
         #         for shape in arbiter.shapes:
@@ -364,6 +343,5 @@ class SimulationWindow(pyglet.window.Window):
 
         if self.sprite_handler.debug_draw == 0:
             self.space.debug_draw(self.options)
-            self.batch.draw()
         else:
             self.sprite_handler.draw(self.obstacle_list, batch=self.batch)
