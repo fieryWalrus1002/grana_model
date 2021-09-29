@@ -26,8 +26,8 @@ def main():
     collision_handler = CollisionHandler(my_space)
 
     window = SimulationWindow(
-        width=450,
-        height=450,
+        width=425,
+        height=475,
         resizable=True,
         window_offset=(int(0.25 * 3440), int(0.05 * 1440)),
         batch=my_batch,
@@ -35,7 +35,6 @@ def main():
         spawner=my_spawner,
         timer=SimulationTimer(),
         scoreboard=Scoreboard(),
-        collision_observer=CollisionObserver(),
         diffusion_handler=DiffusionHandler(),
         sprite_handler=SpriteHandler(),
         collision_handler=collision_handler,
