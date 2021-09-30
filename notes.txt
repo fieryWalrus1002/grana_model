@@ -1,0 +1,2 @@
+References for organizing a project:
+https://medium.com/@tszumowski/the-anatomy-of-a-minimalist-python-repository-boilerplate-26cb2a296ba4
