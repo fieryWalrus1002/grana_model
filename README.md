@@ -1,5 +1,5 @@
 # grana_model
-Author: Magnus Wood, Kirchhoff Lab, WSU
+Author: Magnus Wood, Kirchhoff Lab, WSU \n
 Date: 2020 onward
 
 ## Protein structures in the landscape of a 
