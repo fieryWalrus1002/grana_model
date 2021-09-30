@@ -23,7 +23,9 @@ def main():
         space=my_space,
         batch=my_batch,
     )
-    collision_handler = CollisionHandler(my_space)
+    collision_handler = CollisionHandler(
+        my_space
+    )  # has some custom collision callbacks
 
     window = SimulationWindow(
         width=425,
