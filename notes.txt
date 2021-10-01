@@ -1,0 +1,6 @@
+References for organizing a project:
+https://medium.com/@tszumowski/the-anatomy-of-a-minimalist-python-repository-boilerplate-26cb2a296ba4
+
+Deploying a docker container to AWS:
+https://aws.amazon.com/getting-started/hands-on/deploy-docker-containers/
+

@@ -17,7 +17,6 @@ class SimulationWindow(pyglet.window.Window):
         spawner,
         timer,
         scoreboard,
-        collision_observer,
         diffusion_handler,
         sprite_handler,
         collision_handler,
@@ -31,7 +30,6 @@ class SimulationWindow(pyglet.window.Window):
         self.space = space
         self.batch = batch
         self.scoreboard = scoreboard
-        self.collision_observer = collision_observer
         self.diffusion_handler = diffusion_handler
         self.sprite_handler = sprite_handler
         self.options = pymunk.pyglet_util.DrawOptions()
@@ -280,7 +278,7 @@ class SimulationWindow(pyglet.window.Window):
         self.timer.tick(
             print_ms_per_tick=True
         )  # update ticks since the world started
-        self.collision_observer.reset()  # collision collision_observer reset
+        self.collision_handler.reset_collision_count()  # collision handler reset of counts
 
         # reset overlap distance and collision list
         self.sum_overlap_dist = 0
@@ -336,7 +334,12 @@ class SimulationWindow(pyglet.window.Window):
 
     def on_draw(self):
         self.clear()
-        self.collision_observer.draw(label_pos=(20, self.window_height - 35))
+        self.collision_handler.draw_collision_label(
+            label_pos=(20, self.window_height - 35)
+        )
+        self.collision_handler.draw_area_label(
+            label_pos=(20, self.window_height - 50)
+        )
         self.fps_display.draw()
         # scoreboard.draw(label_pos=[20, window_height - 35])
         self.timer.draw_elapsed_time(label_pos=[20, self.window_height - 20])
