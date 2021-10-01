@@ -143,7 +143,7 @@ class SimulationWindow(pyglet.window.Window):
         with open(filename, "w", newline="") as f:
             write = csv.writer(f)
             # write the headers
-            write.writerow(["type", "x", "y", "angle"])
+            write.writerow(["type", "x", "y", "angle", "area"])
 
             for obstacle in ob_list:
                 write.writerow(
@@ -152,6 +152,7 @@ class SimulationWindow(pyglet.window.Window):
                         obstacle.body.position[0],
                         obstacle.body.position[1],
                         obstacle.body.angle,
+                        obstacle.area,
                     )
                 )
 

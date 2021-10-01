@@ -47,6 +47,16 @@ class PSIIStructure:
         # create the sprite
         self._assign_sprite(batch=batch)
 
+    @property
+    def area(self):
+        """gets the total area of the object, by adding up the area of
+        all of its indiviudal shapes. called as a property"""
+        total_area = 0.0
+
+        for shape in self.body.shapes:
+            total_area += shape.area
+        return total_area
+
     def _assign_sprite(self, batch):
         """loads the img and assigns it as a sprite to this obejct"""
         img = self.obj_dict["sprite"]

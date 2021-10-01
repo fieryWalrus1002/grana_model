@@ -1,54 +1,47 @@
 from pyglet.graphics import Batch
-from pymunk.space import Space
-from grana_model.psiistructure import PSIIStructure
-from grana_model.particle import Particle
 from grana_model.objectdata import ObjectData
 from random import random
 from math import cos, sin, pi
-from pymunk import Vec2d, Body, moment_for_circle, Poly, Space
+from pymunk import Body, Poly, Space
 
 
 class TestObject:
     def __init__(
         self,
         space: Space,
-        obj_dict: dict,
         batch: Batch,
-        shape_type: str,
-        mass=100,
+        position: tuple,
+        coordinates: list,
+        color: tuple,
+        type: str,
     ):
-        self.obj_dict = obj_dict
-        self.type = obj_dict["obj_type"]
-        self.origin_xy = obj_dict["pos"]
-        self.current_xy = obj_dict["pos"]
-        self.last_action = (
-            {}
-        )  # dict to save last action so we can undo it if necessary
-        self.new_scale = 100
 
-        # create the body
-        inertia = moment_for_circle(
-            mass=mass, inner_radius=0, outer_radius=10, offset=(0, 0)
-        )
+        self.body = Body(mass=100, moment=100, body_type=Body.KINEMATIC)
 
-        if self.type in ["C2S2M2", "C2S2M", "C2S2", "C2", "C1"]:
-            body = Body(mass=mass, moment=inertia, body_type=Body.KINEMATIC)
-        else:
-            body = Body(mass=mass, moment=inertia, body_type=Body.DYNAMIC)
+        self.body.position = position  # given pos
+        self.shape = Poly(self.body, vertices=coordinates)
+        self.angle = 0.0
+        self.shape.color = color
+        self.type = type
+        self.shape.collision_type = 1
 
-        body.position = self.origin_xy  # given pos
-        body.angle = obj_dict["angle"]  # in radians
-        body.velocity_func = self.limit_velocity  # limit velocity
-        self.body = (
-            body  # save a reference to the body in the PSII_structure object
-        )
+        space.add(self.body, self.shape)
 
-        # create the shapes and add them to the space
-        shape_list, shape_str = self._create_shape_string(shape_type=shape_type)
-        eval(shape_str)
+    def update_sprite(self, sprite_scale_factor, rotation_factor):
+        # take these and throw them in the trash
+        trash_can = []
+        trash_can.append(sprite_scale_factor)
+        trash_can.append(rotation_factor)
 
-        # create the sprite
-        self._assign_sprite(batch=batch)
+    @property
+    def area(self):
+        """gets the total area of the object, by adding up the area of
+        all of its indiviudal shapes. called as a property"""
+        total_area = 0.0
+
+        for shape in self.body.shapes:
+            total_area += shape.area
+        return total_area
 
 
 class Spawner:
@@ -84,16 +77,59 @@ class Spawner:
 
         return [(r * cos(t)) + center[0], center[1] + (r * sin(t))]
 
-   def setup_model(self, num_particles=0):
-        #sets up the simulation with a certain test set of objects
+    def setup_model(self, num_particles=0):
+        # sets up the simulation with a certain test set of objects
 
+        position_list = [
+            (100.0, 100.0),
+            (300.0, 100.0),
+            (100.0, 300.0),
+            (200.0, 200.0),
+        ]
 
-    def spawn_scale_bar(self):
-        pass
+        color_list = [
+            (255, 255, 255, 255),
+            (255, 0, 0, 255),
+            (0, 255, 0, 255),
+            (0, 0, 255, 255),
+        ]
 
-
-    def spawn_5nm_square(self):
-        pass
-
-    def spawn_super_simple_c2s2m2(self):
-        pass
+        shape_list = [
+            [
+                (9.856115108, -0.071942446),
+                (6.007194245, 12.51798561),
+                (-10.89928058, 13.66906475),
+                (-11.43884892, 1.834532374),
+                (-6.18705036, -12.55395683),
+                (8.309352518, -13.48920863),
+                (11.47482014, -8.129496403),
+            ],  # super simple c2s2m2
+            [
+                (12.51798561, 1.007194245),
+                (-12.48201439, 1.007194245),
+                (-12.48201439, 0),
+                (12.51798561, 0),
+            ],  # 25nm scale bar
+            [(5.0, 0.0), (5.0, 5.0), (0.0, 5.0), (0.0, 0.0)],  # 25nm square
+            [
+                (50.0, 0),
+                (50.0, 10.0),
+                (-50.0, 10.0),
+                (-50.0, 0.0),
+            ],  # 100nm scale bar
+        ]
+        type_list = ["c2s2m2", "25nm_scalebar", "5nm_square", "100nm_scalebar"]
+        object_list = [
+            TestObject(
+                space=self.space,
+                batch=self.batch,
+                type=obj_type,
+                position=position,
+                coordinates=coordinate_list,
+                color=color,
+            )
+            for coordinate_list, color, position, obj_type in zip(
+                shape_list, color_list, position_list, type_list
+            )
+        ]
+        return object_list, []

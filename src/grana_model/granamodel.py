@@ -4,10 +4,11 @@ from grana_model.collisionhandler import CollisionHandler
 from grana_model.simulationtimer import SimulationTimer
 from grana_model.scoreboard import Scoreboard
 from grana_model.diffusionhandler import DiffusionHandler
-from grana_model.collisionobserver import CollisionObserver
 from grana_model.spritehandler import SpriteHandler
 from grana_model.objectdata import ObjectData
 from grana_model.spawner import Spawner
+
+# from grana_model.scale_test import Spawner
 from grana_model.simulationwindow import SimulationWindow
 
 
@@ -19,7 +20,7 @@ def main():
             pos_csv_filename="082620_SEM_final_coordinates.csv"
         ),
         spawn_type="psii_only",
-        shape_type="simple",
+        shape_type="complex",
         space=my_space,
         batch=my_batch,
     )
