@@ -19,10 +19,12 @@ def main():
         object_data=ObjectData(
             pos_csv_filename="082620_SEM_final_coordinates.csv"
         ),
-        spawn_type="psii_only",
+        spawn_type="psii_only_limited",  # 'psii_only', 'psii_only_limited', 'full'
         shape_type="complex",
         space=my_space,
         batch=my_batch,
+        num_particles=0,
+        num_psii=200,
     )
     collision_handler = CollisionHandler(
         my_space

@@ -1,10 +1,11 @@
 from typing import Any, Iterator
 import pandas as pd
-from random import random
+import random
 from pyglet import image
 from math import pi
 import numpy as np
 import pickle
+import copy
 
 
 class ObjectData:
@@ -33,8 +34,6 @@ class ObjectData:
         )
 
         self.object_list = self.__generate_object_list(
-            pos_list=self.pos_list,
-            type_dict=self.type_dict,
             spawn_seed=spawn_seed,
         )
 
@@ -61,12 +60,7 @@ class ObjectData:
         with open(f"{self.res_path}shapes/{obj_type}.pickle", "rb") as f:
             return pickle.load(f)
 
-    def __generate_object_list(
-        self,
-        pos_list: list[tuple[float, float]],
-        type_dict: dict[Any, Any],
-        spawn_seed=0,
-    ) -> Iterator[Any]:
+    def __generate_object_list(self, spawn_seed=0) -> Iterator[Any]:
         """
         Generates a list of dicts, each containing the data needed to create a
         PSII structure, in this format:
@@ -95,16 +89,18 @@ class ObjectData:
         obj_types = rng.choice(
             structure_types, len(self.pos_list), replace=True, p=structure_p
         )
+        random_pos_list = random.sample(self.pos_list, len(self.pos_list))
+        print(len(random_pos_list))
 
-        for pos, obj_type in zip(pos_list, obj_types):
+        for pos, obj_type in zip(random_pos_list, obj_types):
             obj_entry = {
                 "obj_type": obj_type,
                 "pos": pos,
-                "angle": (2 * pi * random()),
-                "sprite": type_dict[obj_type]["sprite"],
-                "color": type_dict[obj_type]["color"],
-                "shapes_simple": type_dict[obj_type]["shapes_simple"],
-                "shapes_compound": type_dict[obj_type]["shapes_compound"],
+                "angle": (2 * pi * random.random()),
+                "sprite": self.type_dict[obj_type]["sprite"],
+                "color": self.type_dict[obj_type]["color"],
+                "shapes_simple": self.type_dict[obj_type]["shapes_simple"],
+                "shapes_compound": self.type_dict[obj_type]["shapes_compound"],
             }
 
             obj_list.append(obj_entry)
