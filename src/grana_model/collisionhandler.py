@@ -99,4 +99,4 @@ class CollisionHandler:
         total_area = 0.0
         for shape in self.space.shapes:
             total_area += shape.area
-        return round(total_area, 2)
+        return total_area

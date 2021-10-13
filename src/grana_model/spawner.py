@@ -72,7 +72,9 @@ class Spawner:
     def setup_model(self, num_particles=0):
         """instantiates particles and obstacles according to desires"""
 
-        obstacle_list = self.spawn_psii(space=self.space, batch=self.batch)
+        obstacle_list = self.spawn_psii(
+            space=self.space, batch=self.batch
+        ) + self.spawn_secondary_obstacles(space=self.space, batch=self.batch)
 
         if self.spawn_type == "psii_only":
             return obstacle_list, []
@@ -82,7 +84,50 @@ class Spawner:
             )
             return obstacle_list, particle_list
 
+    # def spawn_secondary_obstacles(self, space, batch):
+    #     """spawns only psii obstacles into the simulation space to be rendered
+    #     as part of the provided batch, and appends them to the list provided
+    #     for later usage in the simulation model"""
+    #     object_list = [
+    #         PSIIStructure(
+    #             PSIIStructure(space, obj, batch, self.shape_type),
+    #             space=space,
+    #             batch=batch,
+    #             pos=self.random_pos_in_circle(
+    #                 max_radius=200, center=(200, 200)
+    #             ),
+    #         )
+    #         for _ in range(0, self.particle_count)
+    #     ]
+    #     return object_list
 
+
+#  for i in range(0, int(ratio_free_LHC * len(pos_dict["pos_xy"]))):
+#                 obj_type = "LHCII"
+#                 pos_xy = random_pos_in_circle(max_radius=200, center=(200,200))
+
+#                 self.obstacle_list.append(PSII_structure(mass=10,
+#                                                         space=self.space,
+#                                                         filechunk=obj_point_filenames[obj_type],
+#                                                         type=obj_type,
+#                                                         pos=pos_xy,
+#                                                         color=pos_dict['colors'][obj_type],
+#                                                         img=pos_dict['sprites'][obj_type],
+#                                                         batch=my_batch))
+
+#             # instantiate cytb6f
+#             for i in range(0, num_cytb6f):
+#                 obj_type = "cytb6f"
+#                 pos_xy = random_pos_in_circle(max_radius=200, center=(200,200))
+
+#                 self.obstacle_list.append(PSII_structure(mass=10,
+#                                                         space=self.space,
+#                                                         filechunk=obj_point_filenames[obj_type],
+#                                                         type=obj_type,
+#                                                         pos=pos_xy,
+#                                                         color=pos_dict['colors'][obj_type],
+#                                                         img=pos_dict['sprites'][obj_type],
+#                                                         batch=my_batch))
 #         for i, pos_xy in enumerate(self.object_data.pos_xy):
 #             obj_type = str(pos_dict["obj_type"][i])
 
