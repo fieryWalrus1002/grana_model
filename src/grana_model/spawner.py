@@ -18,11 +18,14 @@ class Spawner:
         space: Space,
         batch: Batch,
         spawn_type: str,
+        num_particles: int = 1000,
+        num_psii: int = 1000,
     ):
         self.object_data = object_data
-        self.particle_count = 1000
-        self.ratio_free_LHC = 2.00  # Helmut says "Assuming that you have 212 PSII (dimer =C2) particles then LHCII should be 424 (2xPSII)"
-        self.num_cytb6f = 70  # 083021: Helmut says cyt b6f 70 (1/3 x PSII)
+        self.num_psii = num_psii
+        self.num_particles = num_particles
+        self.ratio_free_LHC = 2  # Helmut says "Assuming that you have 212 PSII (dimer =C2) particles then LHCII should be 424 (2xPSII)"
+        self.ratio_cytb6f = 0.3  # 083021: Helmut says cyt b6f 70 (1/3 x PSII)
         self.shape_type = shape_type
         self.spawn_type = spawn_type
         self.space = space
@@ -40,49 +43,67 @@ class Spawner:
 
         return [(r * cos(t)) + center[0], center[1] + (r * sin(t))]
 
-    def spawn_psii(self, space, batch):
+    # def spawn_psii(self):
+    #     """spawns only psii obstacles into the simulation space to be rendered
+    #     as part of the provided batch, and appends them to the list provided
+    #     for later usage in the simulation model"""
+
+    #     object_list = [
+    #         PSIIStructure(self.space, obj, self.batch, self.shape_type)
+    #         for obj in self.object_data.object_list
+    #     ]
+
+    #     return object_list
+
+    def spawn_psii(self):
         """spawns only psii obstacles into the simulation space to be rendered
         as part of the provided batch, and appends them to the list provided
-        for later usage in the simulation model"""
-        # iterate throuhg the obj_iter and instantiate a psii_structure for each one
-        object_list = [
-            PSIIStructure(space, obj, batch, self.shape_type)
-            for obj in self.object_data.object_list
-        ]
+        for later usage in the simulation model, up to a limit of self.num_psii"""
+
+        object_list = []
+
+        while len(object_list) < self.num_psii:
+            try:
+                obj = next(self.object_data.object_list)
+            except StopIteration:
+                return object_list
+            # print(obj)
+            # if obj.get("obj_type") == "C2S2M2":
+            object_list.append(
+                PSIIStructure(self.space, obj, self.batch, self.shape_type)
+            )
 
         return object_list
 
-    def spawn_particles(self, space, batch=None):
+    def spawn_particles(self):
         """Instantiates particles into the simulation space and returns a list
         of the particles for later usage in the simulation model
         """
         object_list = [
             Particle(
-                space=space,
-                batch=batch,
+                space=self.space,
+                batch=self.batch,
                 pos=self.random_pos_in_circle(
                     max_radius=200, center=(200, 200)
                 ),
             )
-            for _ in range(0, self.particle_count)
+            for _ in range(0, self.num_particles)
         ]
 
         return object_list
 
-    def setup_model(self, num_particles=0):
-        """instantiates particles and obstacles according to desires"""
+    def spawn_particles_empty(self):
+        """return an empty list for when you don't want to spawn particles"""
+        return []
 
-        obstacle_list = self.spawn_psii(
-            space=self.space, batch=self.batch
-        ) + self.spawn_secondary_obstacles(space=self.space, batch=self.batch)
+    def setup_model(self):
+        """instantiates particles and obstacles according to spawner provided spawn_type"""
 
         if self.spawn_type == "psii_only":
-            return obstacle_list, []
+            return self.spawn_psii(), self.spawn_particles_empty()
+
         else:
-            particle_list = self.spawn_particles(
-                space=self.space, batch=self.batch
-            )
-            return obstacle_list, particle_list
+            return self.spawn_psii(), self.spawn_particles()
 
     # def spawn_secondary_obstacles(self, space, batch):
     #     """spawns only psii obstacles into the simulation space to be rendered

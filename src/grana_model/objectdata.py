@@ -1,6 +1,6 @@
 from typing import Any, Iterator
 import pandas as pd
-from random import random
+import random
 from pyglet import image
 from math import pi
 import numpy as np
@@ -33,8 +33,6 @@ class ObjectData:
         )
 
         self.object_list = self.__generate_object_list(
-            pos_list=self.pos_list,
-            type_dict=self.type_dict,
             spawn_seed=spawn_seed,
         )
 
@@ -140,16 +138,18 @@ class ObjectData:
         obj_types = rng.choice(
             structure_types, len(self.pos_list), replace=True, p=structure_p
         )
+        random_pos_list = random.sample(self.pos_list, len(self.pos_list))
+        print(len(random_pos_list))
 
-        for pos, obj_type in zip(pos_list, obj_types):
+        for pos, obj_type in zip(random_pos_list, obj_types):
             obj_entry = {
                 "obj_type": obj_type,
                 "pos": pos,
-                "angle": (2 * pi * random()),
-                "sprite": type_dict[obj_type]["sprite"],
-                "color": type_dict[obj_type]["color"],
-                "shapes_simple": type_dict[obj_type]["shapes_simple"],
-                "shapes_compound": type_dict[obj_type]["shapes_compound"],
+                "angle": (2 * pi * random.random()),
+                "sprite": self.type_dict[obj_type]["sprite"],
+                "color": self.type_dict[obj_type]["color"],
+                "shapes_simple": self.type_dict[obj_type]["shapes_simple"],
+                "shapes_compound": self.type_dict[obj_type]["shapes_compound"],
             }
 
             obj_list.append(obj_entry)
