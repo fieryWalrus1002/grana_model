@@ -119,17 +119,31 @@ class Spawner:
             ],  # 100nm scale bar
         ]
         type_list = ["c2s2m2", "25nm_scalebar", "5nm_square", "100nm_scalebar"]
+        # object_list = [
+        #     TestObject(
+        #         space=self.space,
+        #         batch=self.batch,
+        #         type=obj_type,
+        #         position=position,
+        #         coordinates=coordinate_list,
+        #         color=color,
+        #     )
+        #     for coordinate_list, color, position, obj_type in zip(
+        #         shape_list, color_list, position_list, type_list
+        #     )
+        # ]
+
         object_list = [
             TestObject(
                 space=self.space,
                 batch=self.batch,
-                type=obj_type,
-                position=position,
-                coordinates=coordinate_list,
-                color=color,
+                type=type_list[0],
+                position=self.random_pos_in_circle(
+                    max_radius=200, center=(200, 200)
+                ),
+                coordinates=shape_list[0],
+                color=color_list[0],
             )
-            for coordinate_list, color, position, obj_type in zip(
-                shape_list, color_list, position_list, type_list
-            )
+            for _ in range(0, 211)
         ]
         return object_list, []

@@ -6,6 +6,7 @@ from grana_model.scoreboard import Scoreboard
 from grana_model.diffusionhandler import DiffusionHandler
 from grana_model.spritehandler import SpriteHandler
 from grana_model.objectdata import ObjectData
+
 from grana_model.spawner import Spawner
 
 # from grana_model.scale_test import Spawner
