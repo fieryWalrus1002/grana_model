@@ -20,7 +20,9 @@ def main():
         object_data=ObjectData(
             pos_csv_filename="082620_SEM_final_coordinates.csv"
         ),
-        spawn_type="psii_only_limited",  # 'psii_only', 'psii_only_limited', 'full'
+        spawn_type="psii_secondary_noparticles",
+        # spawn_type="psii_only",
+        # spawn_type="full",
         shape_type="complex",
         space=my_space,
         batch=my_batch,

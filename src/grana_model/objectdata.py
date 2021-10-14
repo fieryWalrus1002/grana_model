@@ -106,8 +106,6 @@ class ObjectData:
 
     def __generate_object_list(
         self,
-        pos_list: list[tuple[float, float]],
-        type_dict: dict[Any, Any],
         spawn_seed=0,
     ) -> Iterator[Any]:
         """

@@ -12,18 +12,27 @@ class PSIIStructure:
         obj_dict: dict,
         batch: Batch,
         shape_type: str,
+        pos: tuple[float, float],
+        angle: float,
         mass=100,
     ):
         self.obj_dict = obj_dict
         self.type = obj_dict["obj_type"]
-        self.origin_xy = obj_dict["pos"]
-        self.current_xy = obj_dict["pos"]
-        self.last_action = (
-            {}
-        )  # dict to save last action so we can undo it if necessary
+        self.origin_xy = pos
+        self.current_xy = pos
+        self.last_action = {}
         self.new_scale = 100
 
-        # create the body
+        self.body = self._create_body(mass=mass, angle=angle)
+
+        shape_list, shape_str = self._create_shape_string(shape_type=shape_type)
+        eval(shape_str)
+
+        self._assign_sprite(batch=batch)
+
+    def _create_body(self, mass: float, angle: float):
+        """create a pymunk.Body object with given mass, position, angle"""
+
         inertia = moment_for_circle(
             mass=mass, inner_radius=0, outer_radius=10, offset=(0, 0)
         )
@@ -34,18 +43,10 @@ class PSIIStructure:
             body = Body(mass=mass, moment=inertia, body_type=Body.DYNAMIC)
 
         body.position = self.origin_xy  # given pos
-        body.angle = obj_dict["angle"]  # in radians
+        body.angle = angle
         body.velocity_func = self.limit_velocity  # limit velocity
-        self.body = (
-            body  # save a reference to the body in the PSII_structure object
-        )
 
-        # create the shapes and add them to the space
-        shape_list, shape_str = self._create_shape_string(shape_type=shape_type)
-        eval(shape_str)
-
-        # create the sprite
-        self._assign_sprite(batch=batch)
+        return body
 
     @property
     def area(self):
@@ -77,36 +78,37 @@ class PSIIStructure:
         """create a shape_string that when provided as
         an argument to eval(), will create all the compound or simple
         shapes needed to define complex structures and
-        add them to the space along with the object body"""
-
-        # now create all the shapes from the shape coordinate files
-        shape_list = []
-        str_command = "self.body, "
+        add them to the space along with self.body"""
 
         if shape_type == "simple":
             coord_list = self.obj_dict["shapes_simple"]
         else:
             coord_list = self.obj_dict["shapes_compound"]
+        shape_list = [
+            self._create_shape(shape_coord=shape_coord)
+            for shape_coord in coord_list
+        ]
 
-        # find all the matching coordinate files
-        for i, shape_coordinates in enumerate(coord_list):
+        return (
+            shape_list,
+            f"space.add(self.body, {','.join([str(f'shape_list[{i}]') for i, shape in enumerate(shape_list)])})",
+        )
 
-            # shape_coordinates = read_csv(file).values.tolist()
+        # str_out = f"space.add({str_command})"
 
-            # create the shape
-            my_shape = Poly(self.body, vertices=shape_coordinates)
+        # print(str_out)
 
-            my_shape.color = self.obj_dict["color"]
+        # return shape_list, str_out
 
-            my_shape.collision_type = 1
+    def _create_shape(self, shape_coord: tuple):
+        """creates a shape"""
+        my_shape = Poly(self.body, vertices=shape_coord)
 
-            # append the shape to our shape list
-            shape_list.append(my_shape)
+        my_shape.color = self.obj_dict["color"]
 
-            # add the shape to the string
-            str_command += str(f"shape_list[{i}], ")
+        my_shape.collision_type = 1
 
-        return shape_list, (f"space.add({str_command})")
+        return my_shape
 
     def update_sprite(self, sprite_scale_factor, rotation_factor):
         self.sprite.rotation = degrees(-self.body.angle) + rotation_factor
