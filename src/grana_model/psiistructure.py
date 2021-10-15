@@ -1,8 +1,7 @@
-from pyglet.sprite import Sprite
+import pyglet
 from math import degrees, sqrt
 from random import random
 from pymunk import Vec2d, Body, moment_for_circle, Poly, Space
-from pyglet.graphics import Batch
 
 
 class PSIIStructure:
@@ -10,7 +9,7 @@ class PSIIStructure:
         self,
         space: Space,
         obj_dict: dict,
-        batch: Batch,
+        batch: pyglet.graphics.Batch,
         shape_type: str,
         pos: tuple[float, float],
         angle: float,
@@ -20,7 +19,11 @@ class PSIIStructure:
         self.type = obj_dict["obj_type"]
         self.origin_xy = pos
         self.current_xy = pos
-        self.last_action = {}
+        self.last_action = {
+            "action": "rotate",
+            "old_value": angle,
+            "new_value": angle,
+        }
         self.new_scale = 100
 
         self.body = self._create_body(mass=mass, angle=angle)
@@ -60,12 +63,12 @@ class PSIIStructure:
 
     def _assign_sprite(self, batch):
         """loads the img and assigns it as a sprite to this obejct"""
-        img = self.obj_dict["sprite"]
+        img = pyglet.image.load(self.obj_dict["sprite"])
         color = self.obj_dict["color"]
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
 
-        self.sprite = Sprite(
+        self.sprite = pyglet.sprite.Sprite(
             img, x=self.body.position.x, y=self.body.position.y, batch=batch
         )
         self.sprite.scale = 0.009

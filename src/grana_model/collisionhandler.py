@@ -37,7 +37,7 @@ class CollisionHandler:
         pass
 
     def __separate(self, arbiter, space, data):
-        print("coll_separate")
+        # print("coll_separate")
         pass
 
         # We want to update the collision normal to make the bounce direction
@@ -58,7 +58,7 @@ class CollisionHandler:
         self.collision_count += 1
 
         if overlap_distance < 0:
-            self.overlap_distance += overlap_distance
+            self.overlap_distance += -1 * overlap_distance
 
     def reset_collision_count(self):
         self.total_collision_count += self.collision_count

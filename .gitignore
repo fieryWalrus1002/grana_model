@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# pickles
+*.pickle
+
 # C extensions
 *.so
 
@@ -138,6 +141,7 @@ dmypy.json
 cython_debug/
 
 # project specific settings
+src/grana_model/scratch
 src/grana_model/res/compound_shapes/
 src/grana_model/__pycache__/
 src/__pycache__/

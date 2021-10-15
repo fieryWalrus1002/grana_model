@@ -1,10 +1,10 @@
 from typing import Any, Iterator
 import pandas as pd
 import random
-from pyglet import image
 from math import pi
 import numpy as np
 import pickle
+import os
 
 
 class ObjectData:
@@ -41,7 +41,8 @@ class ObjectData:
             "obj_type": obj_type,
             "shapes_compound": self.__load_compound_shapes(obj_type),
             "shapes_simple": self.__load_simple_shapes(obj_type),
-            "sprite": image.load(f"{self.res_path}/sprites/{obj_type}.png"),
+            # "sprite": image.load(f"{self.res_path}/sprites/{obj_type}.png"),
+            "sprite": os.path.join(self.res_path, f"sprites/{obj_type}.png"),
             "color": self.__object_colors_dict[obj_type],
         }
         return obj_dict
