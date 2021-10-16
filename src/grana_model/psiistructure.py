@@ -1,6 +1,6 @@
 import pyglet
 from math import degrees, sqrt
-from random import random
+import random
 from pymunk import Vec2d, Body, moment_for_circle, Poly, Space
 
 
@@ -143,36 +143,48 @@ class PSIIStructure:
         if self.last_action["action"] == "move":
             self.body.position = self.last_action["old_value"]
 
+    # def action(self, action_num):
+    #     if action_num == 0:
+    #         # up
+    #         self.move("up")
+    #         pass
+    #     if action_num == 1:
+    #         # down
+    #         self.move("down")
+    #         pass
+    #     if action_num == 2:
+    #         # right
+    #         self.move("right")
+    #         pass
+    #     if action_num == 3:
+    #         # left
+    #         self.move("left")
+    #         pass
+    #     if action_num == 4:
+    #         # rotate left
+    #         self.rotate(direction=0)
+    #         pass
+    #     if action_num == 5:
+    #         # rotate right
+    #         self.rotate(direction=1)
+    #         pass
+
     def action(self, action_num):
-        if action_num == 0:
-            # up
-            self.move("up")
-            pass
-        if action_num == 1:
-            # down
-            self.move("down")
-            pass
-        if action_num == 2:
-            # right
-            self.move("right")
-            pass
-        if action_num == 3:
-            # left
-            self.move("left")
-            pass
-        if action_num == 4:
+        if action_num <= 4:
+            self.move(random.randint(0, 3), step_dist=0.25)
+        if action_num == 5:
             # rotate left
             self.rotate(direction=0)
             pass
-        if action_num == 5:
+        if action_num == 6:
             # rotate right
             self.rotate(direction=1)
             pass
 
     def rotate(self, direction):
         current_angle = self.body.angle
-        random_angle = random() * 2 * 0.0174533
-
+        # random_angle = random() * 2 * 0.0174533
+        random_angle = random.random() * 15 * 0.0174533  # up to 15 degrees
         if direction == 0:
             # rotate left
             new_angle = current_angle + random_angle
@@ -195,7 +207,7 @@ class PSIIStructure:
         self.body.angle = new_angle
 
     def move(self, direction, step_dist=1):
-        step_distance = random() * step_dist
+        step_distance = random.random() * step_dist
 
         # move in a direction but end within the tether distance
         # body.position.x and body.position.y can be modified, but the new position has to be within the distance of 1nm in any direction from the origin point.
@@ -212,20 +224,20 @@ class PSIIStructure:
             x1, y1 = self.body.position
 
             # move in a direction the step distance
-            if direction == "up":
+            if direction == 0:
                 y1 += step_distance
-            if direction == "down":
+            if direction == 1:
                 y1 -= step_distance
-            if direction == "right":
+            if direction == 2:
                 x1 += step_distance
-            if direction == "left":
+            if direction == 3:
                 x1 -= step_distance
 
             # calculate the new distance from the tether point
             dist = sqrt(((x0 - x1) ** 2) + ((y0 - y1) ** 2))
 
             # each attempt will reduce the step distance a tiny amount
-            step_distance -= 0.025
+            step_distance -= 0.01
 
         # the new position is within the tether range, so lets assign it
         # if you didn't move at all, then you didn't move so keep your existing position

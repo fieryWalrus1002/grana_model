@@ -48,6 +48,10 @@ class AreaStrategy(ABC):
     def reset(self):
         pass
 
+    @abstractmethod
+    def total_zones(self):
+        pass
+
 
 class Rings(AreaStrategy):
     """divides all the objects into fives bands and will return band lists as requested"""
@@ -56,29 +60,38 @@ class Rings(AreaStrategy):
         self, object_list: list, origin_point: tuple[float, float] = (200, 200)
     ):
         self.origin_point = origin_point
-        self.zone_list = self.create_zones(object_list)
         self.index = -1
+        self.zone_distances = [
+            (0.0, 89.0),
+            (89.0, 127.0),
+            (127.0, 155.0),
+            (155.0, 178.0),
+            (178.0, 200.0),
+            (0.0, 200.0),
+        ]
+        self.zone_list = self.create_zones(object_list)
 
     def reset(self):
         self.zone_list = self.create_zones(object_list)
         self.index = -1
 
     def create_zones(self, object_list: list) -> list:
-        """sorts the objects into bands according to their distance from origin_point and return a list of lists"""
+        """sorts the objects into bands according to their distance from origin_point and return a list of lists
+        The final ring is actually ALL of the objects in the full object_list, so we can reuse it later
+
+        """
         zone_list = [
             [
                 object
                 for object in object_list
-                if self._object_in_ring(object=object, distance=distance)
+                if self._object_in_ring(object=object, band=ring)
             ]
-            for distance in [
-                (0.0, 89.0),
-                (89.0, 127.0),
-                (127.0, 155.0),
-                (155.0, 178.0),
-                (178.0, 200.0),
-            ]
+            for ring in self.zone_distances
         ]
+        print(
+            f"len(zone_list): {len(zone_list)}, len(zone_list[0]): {len(zone_list[0])}"
+        )
+
         return zone_list
 
     def get_next_zone(self):
@@ -94,16 +107,21 @@ class Rings(AreaStrategy):
             raise StopIteration
         return self.zone_list[self.index]
 
-    def _object_in_ring(self, object, distance: tuple[float, float]):
+    def _object_in_ring(self, object, band: tuple[float, float]):
         """Check if the object is within the given range band"""
+
         x0, y0 = self.origin_point
         x1, y1 = object.body.position
         obj_dist = math.sqrt((x0 - x1) ** 2 + (y0 - y1) ** 2)
 
-        if obj_dist > distance[0] and obj_dist < distance[1]:
+        if obj_dist > band[0] and obj_dist < band[1]:
             return True
         else:
             return False
+
+    @property
+    def total_zones(self):
+        return len(self.zone_distances)
 
 
 class ExpandingCircle(AreaStrategy):
@@ -113,8 +131,13 @@ class ExpandingCircle(AreaStrategy):
         self, object_list: list, origin_point: tuple[float, float] = (200, 200)
     ):
         self.origin_point = origin_point
-        self.zone_list = self.create_zones(object_list)
         self.index = -1
+        self.zone_distances = [89, 127, 155, 178, 200]
+        self.zone_list = self.create_zones(object_list)
+
+    @property
+    def total_zones(self):
+        return len(self.zone_distances)
 
     def reset(self):
         self.zone_list = self.create_zones(object_list)
@@ -128,7 +151,7 @@ class ExpandingCircle(AreaStrategy):
                 for object in object_list
                 if self._object_in_zone(object=object, distance=distance)
             ]
-            for distance in [89, 127, 155, 178, 200]
+            for distance in self.zone_distances
         ]
         return zone_list
 
@@ -206,10 +229,10 @@ class OverlapAgent:
         self.collision_handler = collision_handler
 
         if area_strategy is not None:
-            self.area_strategy = area_strategy(
-                object_list, origin_point=(200, 200)
-            )
+            print(f"using {area_strategy}")
+            self.area_strategy = area_strategy
         else:
+            print(f"no area strategy provided, using ExpandingCircle")
             self.area_strategy = ExpandingCircle(
                 object_list,
                 origin_point=(200, 200),
@@ -230,7 +253,7 @@ class OverlapAgent:
                     f"zone: {zone_num + 1}/5 finished, time_limit: {self.time_limit}, overlap: {round(mean_overlap, 2)}"
                 )
 
-            if zone_num == 4:
+            if zone_num == self.area_strategy.total_zones - 1:
                 self.export_coordinates(zone_num, zone_list, mean_overlap)
 
         self.area_strategy.reset()
@@ -242,7 +265,7 @@ class OverlapAgent:
             print("not a PSIIStructure")
             return
 
-        object.action(random.randint(0, 6))
+        object.action(random.randint(1, 6))
 
         new_overlap_distance = self._update_space()
 
@@ -287,7 +310,7 @@ class OverlapAgent:
 if __name__ == "__main__":
 
     sim_env = SimulationEnvironment(
-        pos_csv_filename="16102021_101440_4_overlap_273_data.csv",
+        pos_csv_filename="16102021_143144_5_overlap_158_data.csv",
         object_data_exists=True,
     )
 
@@ -296,7 +319,7 @@ if __name__ == "__main__":
     overlap_agent = OverlapAgent(
         time_limit=10,
         object_list=object_list,
-        area_strategy=Rings,
+        area_strategy=Rings(object_list, origin_point=(200, 200)),
         collision_handler=sim_env.collision_handler,
         space=sim_env.space,
     )
@@ -348,4 +371,4 @@ if __name__ == "__main__":
                     overlap_end,
                 ]
             )
-        print("wrote out to csv")
+            print("wrote out to reduc log csv")
