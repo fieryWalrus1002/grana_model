@@ -194,13 +194,11 @@ class PSIIStructure:
         # set the new angle
         self.body.angle = new_angle
 
-    def move(self, direction, **kwargs):
-        # what distance should the model move in one action? use a provided value or use this one
-        step_distance = kwargs.get("step_distance", 0.26)
+    def move(self, direction, step_dist=1):
+        step_distance = random() * step_dist
 
         # move in a direction but end within the tether distance
         # body.position.x and body.position.y can be modified, but the new position has to be within the distance of 1nm in any direction from the origin point.
-        # a new point must be within tether_radius of tether_pointFcircle
         x0, y0 = self.origin_xy
         start_pos = self.body.position
         tether_radius = 1
@@ -209,12 +207,9 @@ class PSIIStructure:
         dist = 1000.0
 
         # is this a valid location?
-        while dist > tether_radius:
+        while dist > tether_radius and step_distance > 0:
             # will start as current pos
             x1, y1 = self.body.position
-
-            # each attempt will reduce the step distance a tiny amount
-            step_distance = step_distance - 0.01
 
             # move in a direction the step distance
             if direction == "up":
@@ -227,10 +222,15 @@ class PSIIStructure:
                 x1 -= step_distance
 
             # calculate the new distance from the tether point
-            dist = sqrt((x0 - x1) ** 2 + (y0 - y1) ** 2)
+            dist = sqrt(((x0 - x1) ** 2) + ((y0 - y1) ** 2))
+
+            # each attempt will reduce the step distance a tiny amount
+            step_distance -= 0.025
 
         # the new position is within the tether range, so lets assign it
-        self.body.position = (x1, y1)
+        # if you didn't move at all, then you didn't move so keep your existing position
+        if step_distance > 0:
+            self.body.position = (x1, y1)
 
         # save the action so we can undo it later if needed
         self.last_action = {

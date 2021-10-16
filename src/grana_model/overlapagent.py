@@ -20,6 +20,10 @@ Todo:
 from abc import ABC, abstractmethod
 import math
 import random
+from typing import Iterator
+from grana_model.psiistructure import PSIIStructure
+import csv
+from datetime import datetime
 
 
 class AreaStrategy(ABC):
@@ -139,19 +143,30 @@ class OverlapAgent:
                 origin_point=(200, 200),
             )
 
-    def run(self):
+    def run(self, debug=False):
         """runs the overlap agent through the zone list"""
         overlap_values = []
-        for zone_list in self.area_strategy:
-            self.time_left = self.time_limit
-            while self.time_left > 0:
+        for zone_num, zone_list in enumerate(self.area_strategy):
+            if debug:
+                print(
+                    f"zone: {zone_num} begins, time_limit: {self.time_limit}, len(zone_list): {len(zone_list)}, zone prop of total: {(len(zone_list) / 193)}"
+                )
+            for i in range(0, self.time_limit):
                 overlap = self._call_object(object=random.choice(zone_list))
-                self.time_left -= 1
                 overlap_values.append(overlap)
+                if debug and i % 200 == 0:
+                    print(f"zone: {zone_num}, action_num: {i}")
+            mean_overlap = sum(overlap_values) / len(overlap_values)
+
+            self.export_coordinates(zone_num, zone_list, mean_overlap)
         return overlap_values
 
     def _call_object(self, object):
         """calls object to perform an action, evaluate it, and either keep it or undo it"""
+        if type(object) is not PSIIStructure:
+            print("not a PSIIStructure")
+            return
+
         object.action(random.randint(0, 6))
 
         new_overlap_distance = self._update_space()
@@ -171,3 +186,26 @@ class OverlapAgent:
     def initialize_space(self):
         self.space.step(0.01)
         self.overlap_distance = self.collision_handler.overlap_distance
+
+    def export_coordinates(self, zone_num, zone_list, mean_overlap):
+        now = datetime.now()
+        dt_string = now.strftime("%d%m%Y_%H%M")
+        filename = str(
+            f"{dt_string}_{zone_num}_overlap_{round(mean_overlap, 2)}_data.csv"
+        )
+        print(filename + " has been exported.")
+
+        with open(filename, "w", newline="") as f:
+            write = csv.writer(f)
+            # write the headers
+            write.writerow(["type", "x", "y", "angle", "area"])
+            for object in zone_list:
+                write.writerow(
+                    (
+                        object.type,
+                        object.body.position[0],
+                        object.body.position[1],
+                        object.body.angle,
+                        object.area,
+                    )
+                )
