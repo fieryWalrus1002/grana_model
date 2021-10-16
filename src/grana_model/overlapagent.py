@@ -4,10 +4,18 @@
 This module implements an agent that attempts to reduce overlap between objects
 in the simulation, and strategies that it can follow to perform this duty. 
 
+Can be run from the command line by calling a SimulationEnvironment, or used as part of the SimulationWindow.
+No command line arguments are required, but are going to be implemented so I can run this on Kamiak in the future.
+
 Example:
     $ overlap_agent = OverlapAgent(area_strategy=chosen_strategy, time_limit=1000,
         space=space)
     $ overlap_agent.run()
+
+    or 
+
+    $ py3 -m overlap_agent.py
+    
 
 Todo:
     * everything. abstract strategies, coding the overlap agent, etc.
@@ -23,6 +31,9 @@ import random
 from typing import Iterator
 from grana_model.psiistructure import PSIIStructure
 import csv
+from datetime import datetime
+from grana_model.simulationenv import SimulationEnvironment
+from time import process_time
 from datetime import datetime
 
 
@@ -45,6 +56,10 @@ class ExpandingCircle(AreaStrategy):
         self, object_list: list, origin_point: tuple[float, float] = (200, 200)
     ):
         self.origin_point = origin_point
+        self.zone_list = self.create_zones(object_list)
+        self.index = -1
+
+    def reset(self):
         self.zone_list = self.create_zones(object_list)
         self.index = -1
 
@@ -147,18 +162,21 @@ class OverlapAgent:
         """runs the overlap agent through the zone list"""
         overlap_values = []
         for zone_num, zone_list in enumerate(self.area_strategy):
-            if debug:
-                print(
-                    f"zone: {zone_num} begins, time_limit: {self.time_limit}, len(zone_list): {len(zone_list)}, zone prop of total: {(len(zone_list) / 193)}"
-                )
             for i in range(0, self.time_limit):
                 overlap = self._call_object(object=random.choice(zone_list))
                 overlap_values.append(overlap)
-                if debug and i % 200 == 0:
-                    print(f"zone: {zone_num}, action_num: {i}")
-            mean_overlap = sum(overlap_values) / len(overlap_values)
 
-            self.export_coordinates(zone_num, zone_list, mean_overlap)
+            mean_overlap = sum(overlap_values[-10:-1]) / 10
+
+            if debug:
+                print(
+                    f"zone: {zone_num + 1}/5 finished, time_limit: {self.time_limit}, overlap: {round(mean_overlap, 2)}"
+                )
+
+            if zone_num == 4:
+                self.export_coordinates(zone_num, zone_list, mean_overlap)
+
+        self.area_strategy.reset()
         return overlap_values
 
     def _call_object(self, object):
@@ -190,9 +208,7 @@ class OverlapAgent:
     def export_coordinates(self, zone_num, zone_list, mean_overlap):
         now = datetime.now()
         dt_string = now.strftime("%d%m%Y_%H%M")
-        filename = str(
-            f"{dt_string}_{zone_num}_overlap_{round(mean_overlap, 2)}_data.csv"
-        )
+        filename = f"src/grana_model/res/grana_coordinates/{dt_string}_{zone_num}_overlap_{int(mean_overlap)}_data.csv"
         print(filename + " has been exported.")
 
         with open(filename, "w", newline="") as f:
@@ -209,3 +225,70 @@ class OverlapAgent:
                         object.area,
                     )
                 )
+
+
+if __name__ == "__main__":
+
+    sim_env = SimulationEnvironment(
+        pos_csv_filename="16102021_0813_4_overlap_627_data.csv",
+        object_data_exists=True,
+    )
+
+    object_list, _ = sim_env.spawner.setup_model()
+
+    overlap_agent = OverlapAgent(
+        time_limit=10,
+        object_list=object_list,
+        area_strategy=ExpandingCircle,
+        collision_handler=sim_env.collision_handler,
+        space=sim_env.space,
+    )
+    overlap_agent._update_space()
+
+    time_limits = [1000 for x in range(0, 100)]
+
+    for t_idx, time_limit in enumerate(time_limits):
+        print(f"time_limit: {time_limit}, {t_idx + 1}/{len(time_limits)}")
+
+        overlap_agent.time_limit = time_limit
+        action_limit = overlap_agent.time_limit * 5
+
+        max_time = action_limit / 20
+
+        t1 = process_time()
+
+        overlap_results = overlap_agent.run(debug=True)
+        print(f"len(overlap_results): {len(overlap_results)}")
+        print(f"overlap_begin: {sum(overlap_results[0:9]) / 10}")
+        print(f"overlap_end: {sum(overlap_results[-10:-1]) / 10}")
+
+        elapsed_time = process_time() - t1
+
+        overlap_begin = sum(overlap_results[0:9]) / 10
+        overlap_end = sum(overlap_results[-10:-1]) / 10
+        overlap_reduction_percent = (
+            (overlap_begin - overlap_end) / (overlap_begin + 0.1)
+        ) * 100
+        print(
+            f"overlap reduction of {round(overlap_reduction_percent, 2)}% for {action_limit} actions"
+        )
+
+        # with open("overlap_reduc_log.csv", "w", newline="") as f:
+        #     write = csv.writer(f)
+        #     # write the headers
+        #     write.writerow(
+        #         ["time", "t_idx", "action_limit", "reduction_percent"]
+        #     )
+
+        with open("overlap_reduc_log.csv", "a") as fd:
+            write = csv.writer(fd)
+            write.writerow(
+                [
+                    datetime.now(),
+                    t_idx,
+                    action_limit,
+                    round(overlap_reduction_percent, 2),
+                    overlap_end,
+                ]
+            )
+        print("wrote out to csv")
