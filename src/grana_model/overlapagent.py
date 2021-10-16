@@ -45,8 +45,65 @@ class AreaStrategy(ABC):
         pass
 
     @classmethod
+    def reset(self):
+        pass
+
+
+class Rings(AreaStrategy):
+    """divides all the objects into fives bands and will return band lists as requested"""
+
+    def __init__(
+        self, object_list: list, origin_point: tuple[float, float] = (200, 200)
+    ):
+        self.origin_point = origin_point
+        self.zone_list = self.create_zones(object_list)
+        self.index = -1
+
+    def reset(self):
+        self.zone_list = self.create_zones(object_list)
+        self.index = -1
+
+    def create_zones(self, object_list: list) -> list:
+        """sorts the objects into bands according to their distance from origin_point and return a list of lists"""
+        zone_list = [
+            [
+                object
+                for object in object_list
+                if self._object_in_ring(object=object, distance=distance)
+            ]
+            for distance in [
+                (0.0, 89.0),
+                (89.0, 127.0),
+                (127.0, 155.0),
+                (155.0, 178.0),
+                (178.0, 200.0),
+            ]
+        ]
+        return zone_list
+
+    def get_next_zone(self):
+        return self.__next__()
+
+    def __iter__(self):
+        return self
+
     def __next__(self):
-        return NotImplemented
+        """returns the list of objects for the next zone"""
+        self.index += 1
+        if self.index >= len(self.zone_list):
+            raise StopIteration
+        return self.zone_list[self.index]
+
+    def _object_in_ring(self, object, distance: tuple[float, float]):
+        """Check if the object is within the given range band"""
+        x0, y0 = self.origin_point
+        x1, y1 = object.body.position
+        obj_dist = math.sqrt((x0 - x1) ** 2 + (y0 - y1) ** 2)
+
+        if obj_dist > distance[0] and obj_dist < distance[1]:
+            return True
+        else:
+            return False
 
 
 class ExpandingCircle(AreaStrategy):
@@ -69,7 +126,7 @@ class ExpandingCircle(AreaStrategy):
             [
                 object
                 for object in object_list
-                if self.object_in_zone(object=object, distance=distance)
+                if self._object_in_zone(object=object, distance=distance)
             ]
             for distance in [89, 127, 155, 178, 200]
         ]
@@ -88,7 +145,7 @@ class ExpandingCircle(AreaStrategy):
             raise StopIteration
         return self.zone_list[self.index]
 
-    def object_in_zone(self, object, distance: float):
+    def _object_in_zone(self, object, distance: float):
         """Check if the object is within the given distance from origin_point, returns"""
         x0, y0 = self.origin_point
         x1, y1 = object.body.position
@@ -207,7 +264,7 @@ class OverlapAgent:
 
     def export_coordinates(self, zone_num, zone_list, mean_overlap):
         now = datetime.now()
-        dt_string = now.strftime("%d%m%Y_%H%M")
+        dt_string = now.strftime("%d%m%Y_%H%M%S")
         filename = f"src/grana_model/res/grana_coordinates/{dt_string}_{zone_num}_overlap_{int(mean_overlap)}_data.csv"
         print(filename + " has been exported.")
 
@@ -230,22 +287,22 @@ class OverlapAgent:
 if __name__ == "__main__":
 
     sim_env = SimulationEnvironment(
-        pos_csv_filename="16102021_0813_4_overlap_627_data.csv",
+        pos_csv_filename="16102021_101440_4_overlap_273_data.csv",
         object_data_exists=True,
     )
 
-    object_list, _ = sim_env.spawner.setup_model()
+    object_list, empty_particle_list = sim_env.spawner.setup_model()
 
     overlap_agent = OverlapAgent(
         time_limit=10,
         object_list=object_list,
-        area_strategy=ExpandingCircle,
+        area_strategy=Rings,
         collision_handler=sim_env.collision_handler,
         space=sim_env.space,
     )
     overlap_agent._update_space()
 
-    time_limits = [1000 for x in range(0, 100)]
+    time_limits = [500 for _ in range(0, 1000)]
 
     for t_idx, time_limit in enumerate(time_limits):
         print(f"time_limit: {time_limit}, {t_idx + 1}/{len(time_limits)}")
