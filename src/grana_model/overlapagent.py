@@ -31,9 +31,9 @@ import random
 from typing import Iterator
 from grana_model.psiistructure import PSIIStructure
 import csv
-from datetime import datetime
+from datetime import date, datetime
 from grana_model.simulationenv import SimulationEnvironment
-from time import process_time
+from time import process_time, strftime
 from datetime import datetime
 
 
@@ -310,8 +310,9 @@ class OverlapAgent:
 if __name__ == "__main__":
 
     sim_env = SimulationEnvironment(
-        pos_csv_filename="16102021_143144_5_overlap_158_data.csv",
-        object_data_exists=True,
+        # pos_csv_filename="16102021_083647_5_overlap_66_data.csv",
+        pos_csv_filename="082620_SEM_final_coordinates.csv",
+        object_data_exists=False,
     )
 
     object_list, empty_particle_list = sim_env.spawner.setup_model()
@@ -325,7 +326,9 @@ if __name__ == "__main__":
     )
     overlap_agent._update_space()
 
-    time_limits = [500 for _ in range(0, 1000)]
+    time_limits = [500 for _ in range(0, 100000)]
+
+    # run_start_time = strftime(datetime.now(), "%Y-%m-%d_%H:%M")
 
     for t_idx, time_limit in enumerate(time_limits):
         print(f"time_limit: {time_limit}, {t_idx + 1}/{len(time_limits)}")
@@ -353,6 +356,7 @@ if __name__ == "__main__":
             f"overlap reduction of {round(overlap_reduction_percent, 2)}% for {action_limit} actions"
         )
 
+        # TODO: check if file exists and if not, create it:
         # with open("overlap_reduc_log.csv", "w", newline="") as f:
         #     write = csv.writer(f)
         #     # write the headers
@@ -360,13 +364,21 @@ if __name__ == "__main__":
         #         ["time", "t_idx", "action_limit", "reduction_percent"]
         #     )
 
-        with open("overlap_reduc_log.csv", "a") as fd:
+        # current_time = strftime(str(datetime.now()), "%H:%M:%S")
+        # current_date = strftime(datetime.now(), "%m%d")
+
+        # # filename = f"src/grana_model/res/grana_coordinates/{dt_string}_{zone_num}_overlap_{int(mean_overlap)}_data.csv"
+        # export_path = os.path.join(os.getcwd(), f"/{current_date}/")
+        # if export_path exist:
+
+        # with open(f"{run_start_time}_overlap_log.csv", "a") as fd:
+        with open(f"1017_overlap_log.csv", "a") as fd:
             write = csv.writer(fd)
             write.writerow(
                 [
                     datetime.now(),
                     t_idx,
-                    action_limit,
+                    (action_limit * overlap_agent.area_strategy.total_zones),
                     round(overlap_reduction_percent, 2),
                     overlap_end,
                 ]
