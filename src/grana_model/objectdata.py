@@ -10,7 +10,12 @@ import os
 class ObjectData:
     """This data structure"""
 
-    def __init__(self, pos_csv_filename: str, spawn_seed=0):
+    def __init__(
+        self,
+        pos_csv_filename: str,
+        spawn_seed=0,
+        res_path: str = "src/grana_model/res/",
+    ):
         self.__object_colors_dict = {
             "LHCII": (0, 51, 0, 255),  # darkest green
             "LHCII_monomer": (0, 75, 0, 255),  # darkest green
@@ -22,7 +27,7 @@ class ObjectData:
             "CP43": (178, 255, 103, 255),  # same coordinates as C1, same color
             "cytb6f": (51, 153, 255, 255),  # light blue
         }
-        self.res_path = "src/grana_model/res/"
+        self.res_path = res_path
         self.type_dict = {
             obj_type: self.__generate_object_dict(obj_type)
             for obj_type in self.__object_colors_dict.keys()

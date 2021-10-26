@@ -38,7 +38,9 @@ class SimulationEnvironment:
                 pos_csv_filename=pos_csv_filename
             )
         else:
-            object_data = ObjectData(pos_csv_filename=pos_csv_filename)
+            object_data = ObjectData(
+                pos_csv_filename=pos_csv_filename, res_path="res/"
+            )
 
         self.spawner = Spawner(
             object_data=object_data,

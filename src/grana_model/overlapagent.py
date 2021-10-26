@@ -24,17 +24,21 @@ Todo:
    http://google.github.io/styleguide/pyguide.html
 
 """
-
-from abc import ABC, abstractmethod
+import argparse
+import csv
 import math
 import random
-from typing import Iterator
-from grana_model.psiistructure import PSIIStructure
-import csv
-from datetime import date, datetime
-from grana_model.simulationenv import SimulationEnvironment
-from time import process_time, strftime
+from abc import ABC, abstractmethod
 from datetime import datetime
+from pathlib import Path
+
+import pymunk
+
+from grana_model.collisionhandler import CollisionHandler
+from grana_model.psiistructure import PSIIStructure
+from grana_model.simulationenv import SimulationEnvironment
+
+# from time import process_time, strftime
 
 
 class AreaStrategy(ABC):
@@ -59,6 +63,7 @@ class Rings(AreaStrategy):
     def __init__(
         self, object_list: list, origin_point: tuple[float, float] = (200, 200)
     ):
+        self.object_list = object_list
         self.origin_point = origin_point
         self.index = -1
         self.zone_distances = [
@@ -69,10 +74,10 @@ class Rings(AreaStrategy):
             (178.0, 200.0),
             (0.0, 200.0),
         ]
-        self.zone_list = self.create_zones(object_list)
+        self.zone_list = self.create_zones(self.object_list)
 
     def reset(self):
-        self.zone_list = self.create_zones(object_list)
+        self.zone_list = self.create_zones(self.object_list)
         self.index = -1
 
     def create_zones(self, object_list: list) -> list:
@@ -133,14 +138,15 @@ class ExpandingCircle(AreaStrategy):
         self.origin_point = origin_point
         self.index = -1
         self.zone_distances = [89, 127, 155, 178, 200]
-        self.zone_list = self.create_zones(object_list)
+        self.object_list = object_list
+        self.zone_list = self.create_zones(self.object_list)
 
     @property
     def total_zones(self):
         return len(self.zone_distances)
 
     def reset(self):
-        self.zone_list = self.create_zones(object_list)
+        self.zone_list = self.create_zones(self.object_list)
         self.index = -1
 
     def create_zones(self, object_list: list) -> list:
@@ -198,7 +204,7 @@ class OverlapAgent:
 
     Parameters:
         time_limit (int): maximum number of actions before simulation moves to next
-        period or ends
+        period or ends. Default=1000
 
         object_list (list of PSIIStructure): divides this list
 
@@ -216,10 +222,10 @@ class OverlapAgent:
 
     def __init__(
         self,
-        space,
-        time_limit,
-        object_list,
-        collision_handler,
+        space: pymunk.Space,
+        object_list: list,
+        collision_handler: CollisionHandler,
+        time_limit: int = 1000,
         area_strategy: AreaStrategy = None,
     ):
         self.time_limit = time_limit
@@ -232,7 +238,7 @@ class OverlapAgent:
             print(f"using {area_strategy}")
             self.area_strategy = area_strategy
         else:
-            print(f"no area strategy provided, using ExpandingCircle")
+            print("no area strategy provided, using ExpandingCircle")
             self.area_strategy = ExpandingCircle(
                 object_list,
                 origin_point=(200, 200),
@@ -288,8 +294,12 @@ class OverlapAgent:
     def export_coordinates(self, zone_num, zone_list, mean_overlap):
         now = datetime.now()
         dt_string = now.strftime("%d%m%Y_%H%M%S")
-        filename = f"src/grana_model/res/grana_coordinates/{dt_string}_{zone_num}_overlap_{int(mean_overlap)}_data.csv"
-        print(filename + " has been exported.")
+        filename = (
+            Path.cwd()
+            / "res"
+            / "grana_coordinates"
+            / f"{dt_string}_{zone_num}_overlap_{int(mean_overlap)}_data.csv"
+        )
 
         with open(filename, "w", newline="") as f:
             write = csv.writer(f)
@@ -307,80 +317,136 @@ class OverlapAgent:
                 )
 
 
-if __name__ == "__main__":
+def write_to_log(log_path: str, row_data: list):
+    """exports progress data for a job to csv"""
+    with open(log_path, "a") as fd:
+        write = csv.writer(fd)
+        write.writerow(row_data)
+
+
+def get_log_path(
+    batch_num: int,
+):
+    """uses the batch_num and date to create output log file"""
+    now = datetime.now()
+    dt_string = now.strftime("%d%m%Y_%H%M%S")
+    return Path.cwd() / "res" / "log" / f"{dt_string}_{batch_num}.csv"
+
+
+def main(
+    batch_num: int,
+    filename: str,
+    num_loops: int = 100,
+    object_data_exists: bool = False,
+    actions_per_zone: int = 500,
+):
 
     sim_env = SimulationEnvironment(
         # pos_csv_filename="16102021_083647_5_overlap_66_data.csv",
-        pos_csv_filename="082620_SEM_final_coordinates.csv",
-        object_data_exists=False,
+        pos_csv_filename=filename,
+        object_data_exists=object_data_exists,
     )
 
-    object_list, empty_particle_list = sim_env.spawner.setup_model()
+    object_list, _ = sim_env.spawner.setup_model()
 
     overlap_agent = OverlapAgent(
-        time_limit=10,
         object_list=object_list,
         area_strategy=Rings(object_list, origin_point=(200, 200)),
         collision_handler=sim_env.collision_handler,
         space=sim_env.space,
     )
+
     overlap_agent._update_space()
 
-    time_limits = [500 for _ in range(0, 100000)]
+    log_path = get_log_path(batch_num)
 
-    # run_start_time = strftime(datetime.now(), "%Y-%m-%d_%H:%M")
+    write_to_log(
+        log_path=log_path,
+        row_data=[
+            "datetime",
+            "batch_num",
+            "t_idx",
+            "total_actions",
+            "overlap_pct",
+            "overlap",
+        ],
+    )
+
+    time_limits = [actions_per_zone for _ in range(0, num_loops)]
 
     for t_idx, time_limit in enumerate(time_limits):
-        print(f"time_limit: {time_limit}, {t_idx + 1}/{len(time_limits)}")
 
         overlap_agent.time_limit = time_limit
+
         action_limit = overlap_agent.time_limit * 5
 
-        max_time = action_limit / 20
+        # max_time = action_limit / 20
 
-        t1 = process_time()
+        # t1 = process_time()
 
-        overlap_results = overlap_agent.run(debug=True)
-        print(f"len(overlap_results): {len(overlap_results)}")
-        print(f"overlap_begin: {sum(overlap_results[0:9]) / 10}")
-        print(f"overlap_end: {sum(overlap_results[-10:-1]) / 10}")
+        overlap_results = overlap_agent.run(debug=False)
 
-        elapsed_time = process_time() - t1
+        # elapsed_time = process_time() - t1
 
         overlap_begin = sum(overlap_results[0:9]) / 10
         overlap_end = sum(overlap_results[-10:-1]) / 10
         overlap_reduction_percent = (
             (overlap_begin - overlap_end) / (overlap_begin + 0.1)
         ) * 100
-        print(
-            f"overlap reduction of {round(overlap_reduction_percent, 2)}% for {action_limit} actions"
+
+        write_to_log(
+            log_path=log_path,
+            row_data=[
+                datetime.now(),
+                batch_num,
+                t_idx,
+                (action_limit * overlap_agent.area_strategy.total_zones),
+                round(overlap_reduction_percent, 2),
+                overlap_end,
+            ],
         )
 
-        # TODO: check if file exists and if not, create it:
-        # with open("overlap_reduc_log.csv", "w", newline="") as f:
-        #     write = csv.writer(f)
-        #     # write the headers
-        #     write.writerow(
-        #         ["time", "t_idx", "action_limit", "reduction_percent"]
-        #     )
 
-        # current_time = strftime(str(datetime.now()), "%H:%M:%S")
-        # current_date = strftime(datetime.now(), "%m%d")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="launches an overlap agent run"
+    )
 
-        # # filename = f"src/grana_model/res/grana_coordinates/{dt_string}_{zone_num}_overlap_{int(mean_overlap)}_data.csv"
-        # export_path = os.path.join(os.getcwd(), f"/{current_date}/")
-        # if export_path exist:
+    parser.add_argument(
+        "-batch_num",
+        help="job batch number for SLURM run",
+        type=int,
+        default=0,
+    )
 
-        # with open(f"{run_start_time}_overlap_log.csv", "a") as fd:
-        with open(f"1017_overlap_log.csv", "a") as fd:
-            write = csv.writer(fd)
-            write.writerow(
-                [
-                    datetime.now(),
-                    t_idx,
-                    (action_limit * overlap_agent.area_strategy.total_zones),
-                    round(overlap_reduction_percent, 2),
-                    overlap_end,
-                ]
-            )
-            print("wrote out to reduc log csv")
+    parser.add_argument(
+        "-filename",
+        help="filename of csv position datafile in res/grana_coordinates/",
+        type=str,
+        default="082620_SEM_final_coordinates.csv",
+    )
+
+    parser.add_argument(
+        "-num_loops",
+        help="number of times the overlap agent will loop through the zones",
+        type=int,
+        default=10000,
+    )
+
+    parser.add_argument(
+        "-object_data_exists",
+        help="object data exists. False: generate new object types for XY coordinates. True: load xy, object type, angle from datafile",
+        type=bool,
+        default=False,
+    )
+
+    parser.add_argument(
+        "-actions_per_zone",
+        help="perform this many actions before moving to next zone",
+        type=int,
+        default=500,
+    )
+
+    args = parser.parse_args()
+
+    main(**vars(args))
