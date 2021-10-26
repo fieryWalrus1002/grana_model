@@ -30,7 +30,7 @@ class Particle(pymunk.Body):
 
         # create the sprite
         self._assign_sprite(batch=batch)
-    
+
     @property
     def area(self):
         """gets the total area of the object, by adding up the area of

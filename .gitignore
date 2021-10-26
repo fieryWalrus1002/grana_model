@@ -148,3 +148,4 @@ venv/Lib/site-packages
 *.csv
 .vscode/
 argparse.py
+old_setup_files/
