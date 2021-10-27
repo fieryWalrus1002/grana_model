@@ -34,9 +34,9 @@ from pathlib import Path
 
 import pymunk
 
-from grana_model.collisionhandler import CollisionHandler
-from grana_model.psiistructure import PSIIStructure
-from grana_model.simulationenv import SimulationEnvironment
+from .collisionhandler import CollisionHandler
+from .psiistructure import PSIIStructure
+from .simulationenv import SimulationEnvironment
 
 # from time import process_time, strftime
 
@@ -240,8 +240,7 @@ class OverlapAgent:
         else:
             print("no area strategy provided, using ExpandingCircle")
             self.area_strategy = ExpandingCircle(
-                object_list,
-                origin_point=(200, 200),
+                object_list, origin_point=(200, 200),
             )
 
     def run(self, debug=False):
@@ -324,9 +323,7 @@ def write_to_log(log_path: str, row_data: list):
         write.writerow(row_data)
 
 
-def get_log_path(
-    batch_num: int,
-):
+def get_log_path(batch_num: int,):
     """uses the batch_num and date to create output log file"""
     now = datetime.now()
     dt_string = now.strftime("%d%m%Y_%H%M%S")

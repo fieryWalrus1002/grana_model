@@ -21,9 +21,14 @@ Todo:
 """
 import pymunk
 import pyglet
-from grana_model.spawner import Spawner
-from grana_model.objectdata import ObjectDataExistingData, ObjectData
-from grana_model.collisionhandler import CollisionHandler
+
+# from grana_model.spawner import Spawner
+# from grana_model.objectdata import ObjectDataExistingData, ObjectData
+# from grana_model.collisionhandler import CollisionHandler
+
+from .spawner import Spawner
+from .objectdata import ObjectDataExistingData, ObjectData
+from .collisionhandler import CollisionHandler
 
 
 class SimulationEnvironment:
@@ -38,9 +43,7 @@ class SimulationEnvironment:
                 pos_csv_filename=pos_csv_filename
             )
         else:
-            object_data = ObjectData(
-                pos_csv_filename=pos_csv_filename, res_path="res/"
-            )
+            object_data = ObjectData(pos_csv_filename=pos_csv_filename)
 
         self.spawner = Spawner(
             object_data=object_data,

@@ -1,16 +1,16 @@
 import pymunk
 import pyglet
-from grana_model.collisionhandler import CollisionHandler
-from grana_model.simulationtimer import SimulationTimer
-from grana_model.scoreboard import Scoreboard
-from grana_model.diffusionhandler import DiffusionHandler
-from grana_model.spritehandler import SpriteHandler
-from grana_model.objectdata import ObjectData
+from .collisionhandler import CollisionHandler
+from .simulationtimer import SimulationTimer
+from .scoreboard import Scoreboard
+from .diffusionhandler import DiffusionHandler
+from .spritehandler import SpriteHandler
+from .objectdata import ObjectData
 
-from grana_model.spawner import Spawner
+from .spawner import Spawner
 
 # from grana_model.scale_test import Spawner
-from grana_model.simulationwindow import SimulationWindow
+from .simulationwindow import SimulationWindow
 
 
 def main():

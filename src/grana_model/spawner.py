@@ -1,8 +1,8 @@
 from pyglet.graphics import Batch
 from pymunk.space import Space
-from grana_model.psiistructure import PSIIStructure
-from grana_model.particle import Particle
-from grana_model.objectdata import ObjectData
+from .psiistructure import PSIIStructure
+from .particle import Particle
+from .objectdata import ObjectData
 from random import random
 from math import cos, sin, pi
 

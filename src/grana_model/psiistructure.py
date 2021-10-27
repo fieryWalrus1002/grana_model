@@ -2,6 +2,8 @@ import pyglet
 from math import degrees, sqrt
 import random
 from pymunk import Vec2d, Body, moment_for_circle, Poly, Space
+import os
+from pathlib import Path
 
 
 class PSIIStructure:
@@ -63,7 +65,16 @@ class PSIIStructure:
 
     def _assign_sprite(self, batch):
         """loads the img and assigns it as a sprite to this obejct"""
-        img = pyglet.image.load(self.obj_dict["sprite"])
+        img_path = (
+            Path.cwd()
+            / "src"
+            / "grana_model"
+            / "res"
+            / "sprites"
+            / f"{self.obj_dict['sprite']}"
+        )
+        # src/grana_model/res/sprites/c2.png
+        img = pyglet.image.load(img_path)
         color = self.obj_dict["color"]
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2

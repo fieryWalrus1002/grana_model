@@ -37,9 +37,7 @@ class ObjectData:
             f"{self.res_path}/grana_coordinates/{pos_csv_filename}"
         )
 
-        self.object_list = self.__generate_object_list(
-            spawn_seed=spawn_seed,
-        )
+        self.object_list = self.__generate_object_list(spawn_seed=spawn_seed,)
 
     def __generate_object_dict(self, obj_type: str):
         obj_dict = {
@@ -47,7 +45,7 @@ class ObjectData:
             "shapes_compound": self.__load_compound_shapes(obj_type),
             "shapes_simple": self.__load_simple_shapes(obj_type),
             # "sprite": image.load(f"{self.res_path}/sprites/{obj_type}.png"),
-            "sprite": os.path.join(self.res_path, f"sprites/{obj_type}.png"),
+            "sprite": f"{obj_type.lower()}.png",
             "color": self.__object_colors_dict[obj_type],
         }
         return obj_dict
@@ -110,10 +108,7 @@ class ObjectData:
     #         for file in obj_dict["shapes_simple"]
     #     ]
 
-    def __generate_object_list(
-        self,
-        spawn_seed=0,
-    ) -> Iterator[Any]:
+    def __generate_object_list(self, spawn_seed=0,) -> Iterator[Any]:
         """
         Generates a list of dicts, each containing the data needed to create a
         PSII structure, in this format:
@@ -193,9 +188,7 @@ class ObjectDataExistingData(ObjectData):
             f"{self.res_path}/grana_coordinates/{pos_csv_filename}"
         )
 
-        self.object_list = self.__generate_object_list(
-            spawn_seed=spawn_seed,
-        )
+        self.object_list = self.__generate_object_list(spawn_seed=spawn_seed,)
 
     def __generate_object_dict(self, obj_type: str):
         obj_dict = {
@@ -223,10 +216,7 @@ class ObjectDataExistingData(ObjectData):
         with open(f"{self.res_path}shapes/{obj_type}.pickle", "rb") as f:
             return pickle.load(f)
 
-    def __generate_object_list(
-        self,
-        spawn_seed=0,
-    ) -> Iterator[Any]:
+    def __generate_object_list(self, spawn_seed=0,) -> Iterator[Any]:
         """
         Generates a list of dicts, each containing the data needed to create a
         PSII structure, in this format:
