@@ -16,6 +16,7 @@ class PSIIStructure:
         pos: tuple[float, float],
         angle: float,
         mass=100,
+        use_sprites: bool = True,
     ):
         self.obj_dict = obj_dict
         self.type = obj_dict["obj_type"]
@@ -32,8 +33,8 @@ class PSIIStructure:
 
         shape_list, shape_str = self._create_shape_string(shape_type=shape_type)
         eval(shape_str)
-
-        self._assign_sprite(batch=batch)
+        if use_sprites:
+            self._assign_sprite(batch=batch)
 
     def _create_body(self, mass: float, angle: float):
         """create a pymunk.Body object with given mass, position, angle"""

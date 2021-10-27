@@ -20,6 +20,7 @@ class Spawner:
         spawn_type: str,
         num_particles: int = 1000,
         num_psii: int = 1000,
+        use_sprites: bool = True,
     ):
         self.object_data = object_data
         self.num_psii = num_psii
@@ -30,6 +31,7 @@ class Spawner:
         self.spawn_type = spawn_type
         self.space = space
         self.batch = batch
+        self.use_sprites = use_sprites
 
     def random_angle(self) -> float:
         """returns a random angle in radians"""
@@ -89,6 +91,7 @@ class Spawner:
                     self.shape_type,
                     pos=obj.get("pos"),
                     angle=obj.get("angle"),
+                    use_sprites=self.use_sprites,
                 )
             )
 
@@ -123,6 +126,7 @@ class Spawner:
                 self.shape_type,
                 pos=self.random_pos_in_circle(),
                 angle=self.random_angle(),
+                use_sprites=self.use_sprites,
             )
             for _ in range(0, int(self.ratio_free_LHC * self.num_psii))
         ]
@@ -138,6 +142,7 @@ class Spawner:
                 self.shape_type,
                 pos=self.random_pos_in_circle(),
                 angle=self.random_angle(),
+                use_sprites=self.use_sprites,
             )
             for _ in range(0, int(self.ratio_free_LHC * self.num_psii))
         ]

@@ -34,9 +34,14 @@ from .collisionhandler import CollisionHandler
 class SimulationEnvironment:
     """represents a simulation environment, with pymunk.Space, PSIIStructures instantiated within it by a Spawner instance from a provided coord file."""
 
-    def __init__(self, pos_csv_filename: str, object_data_exists: bool):
+    def __init__(
+        self, pos_csv_filename: str, object_data_exists: bool, gui: bool = False
+    ):
         self.space = pymunk.Space()
-        self.batch = pyglet.graphics.Batch()
+        if gui:
+            self.batch = pyglet.graphics.Batch()
+        else:
+            self.batch = None
 
         if object_data_exists:
             object_data = ObjectDataExistingData(
@@ -53,6 +58,7 @@ class SimulationEnvironment:
             batch=self.batch,
             num_particles=0,
             num_psii=211,
+            use_sprites=False,
         )
 
         self.collision_handler = CollisionHandler(self.space)
