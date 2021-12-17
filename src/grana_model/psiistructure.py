@@ -88,8 +88,7 @@ class PSIIStructure:
         else:
             coord_list = self.obj_dict["shapes_compound"]
         shape_list = [
-            self._create_shape(shape_coord=shape_coord)
-            for shape_coord in coord_list
+            self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list
         ]
 
         return (
@@ -124,9 +123,7 @@ class PSIIStructure:
         self.current_xy = (self.body.x, self.body.y)
 
     def go_home(self):
-        direction = Vec2d(
-            x=self.origin_xy[0] / 10000, y=self.origin_xy[1] / 10000
-        )
+        direction = Vec2d(x=self.origin_xy[0] / 10000, y=self.origin_xy[1] / 10000)
         self.body.apply_force_at_local_point(force=direction, point=(0, 0))
 
     def limit_velocity(self, body, gravity, damping, dt):
@@ -210,7 +207,8 @@ class PSIIStructure:
         step_distance = random.random() * step_dist
 
         # move in a direction but end within the tether distance
-        # body.position.x and body.position.y can be modified, but the new position has to be within the distance of 1nm in any direction from the origin point.
+        # body.position.x and body.position.y can be modified, but the new
+        # position has to be within the distance of 1nm in any direction from the origin point.
         x0, y0 = self.origin_xy
         start_pos = self.body.position
         tether_radius = 1
@@ -252,7 +250,8 @@ class PSIIStructure:
         }
 
     # ### random position
-    #     # generate a new position within range of the origin, and move the object to that location
+    #     # generate a new position within range of the origin, and move the object to
+    # that location
     #     # new position
     #     # random angle
     #     alpha = 2 * pi * random()

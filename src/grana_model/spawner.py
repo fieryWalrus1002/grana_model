@@ -24,8 +24,8 @@ class Spawner:
         self.object_data = object_data
         self.num_psii = num_psii
         self.num_particles = num_particles
-        self.ratio_free_LHC = 2.0  # Helmut says "Assuming that you have 212 PSII (dimer =C2) particles then LHCII should be 424 (2xPSII)"
-        self.ratio_cytb6f = 0.3  # 083021: Helmut says cyt b6f 70 (1/3 x PSII)
+        self.ratio_free_LHC = 2.0
+        self.ratio_cytb6f = 0.3
         self.shape_type = shape_type
         self.spawn_type = spawn_type
         self.space = space
@@ -51,7 +51,8 @@ class Spawner:
         return ((r * cos(t)) + center[0], center[1] + (r * sin(t)))
 
     def setup_model(self):
-        """instantiates particles and obstacles according to spawner provided spawn_type"""
+        """instantiates particles and obstacles according to spawner provided
+        spawn_type"""
 
         if self.spawn_type == "psii_only":
             return self.spawn_psii(), self.spawn_particles_empty()
@@ -68,9 +69,13 @@ class Spawner:
             )
 
     def spawn_psii(self):
-        """spawns only psii obstacles into the simulation space to be rendered
-        as part of the provided batch, and appends them to the list provided
-        for later usage in the simulation model, up to a limit of self.num_psii"""
+        """
+        spawns only psii obstacles into the simulation space.
+
+        They will be rendered as part of the provided batch, and appends them
+        to the list provided for later usage in the simulation model, up to a
+        limit of self.num_psii
+        """
 
         object_list = []
 

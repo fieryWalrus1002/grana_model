@@ -5,17 +5,13 @@ from math import pi
 import numpy as np
 import pickle
 import os
+from pathlib import Path
 
 
 class ObjectData:
     """This data structure"""
 
-    def __init__(
-        self,
-        pos_csv_filename: str,
-        spawn_seed=0,
-        res_path: str = "src/grana_model/res/",
-    ):
+    def __init__(self, pos_csv_filename: str, spawn_seed=0):
         self.__object_colors_dict = {
             "LHCII": (0, 51, 0, 255),  # darkest green
             "LHCII_monomer": (0, 75, 0, 255),  # darkest green
@@ -27,7 +23,7 @@ class ObjectData:
             "CP43": (178, 255, 103, 255),  # same coordinates as C1, same color
             "cytb6f": (51, 153, 255, 255),  # light blue
         }
-        self.res_path = res_path
+        self.res_path = Path.cwd() / "src" / "grana_model" / "res"
         self.type_dict = {
             obj_type: self.__generate_object_dict(obj_type)
             for obj_type in self.__object_colors_dict.keys()
@@ -54,15 +50,20 @@ class ObjectData:
 
     def __import_pos_data(self, file_path):
         """Imports the (x, y) positions from the csv data file provided in filename"""
+        print(Path.cwd())
         imported_csv = pd.read_csv(file_path)
         return pd.DataFrame(imported_csv, columns=["x", "y"]).values.tolist()
 
     def __load_simple_shapes(self, obj_type):
-        with open(f"{self.res_path}shapes/{obj_type}_simple.pickle", "rb") as f:
+        with open(
+            str(self.res_path / "shapes" / f"{obj_type}_simple.pickle"), "rb"
+        ) as f:
             return pickle.load(f)
 
     def __load_compound_shapes(self, obj_type):
-        with open(f"{self.res_path}shapes/{obj_type}.pickle", "rb") as f:
+        with open(
+            str(self.res_path / "shapes" / f"{obj_type}_simple.pickle"), "rb"
+        ) as f:
             return pickle.load(f)
 
     # def generate_secondary_object_list(
@@ -183,7 +184,8 @@ class ObjectDataExistingData(ObjectData):
             "CP43": (178, 255, 103, 255),  # same coordinates as C1, same color
             "cytb6f": (51, 153, 255, 255),  # light blue
         }
-        self.res_path = "src/grana_model/res/"
+        self.res_path = Path.cwd() / "src" / "grana_model" / "res"
+
         self.type_dict = {
             obj_type: self.__generate_object_dict(obj_type)
             for obj_type in self.__object_colors_dict.keys()
@@ -216,11 +218,15 @@ class ObjectDataExistingData(ObjectData):
         ).values.tolist()
 
     def __load_simple_shapes(self, obj_type):
-        with open(f"{self.res_path}shapes/{obj_type}_simple.pickle", "rb") as f:
+        with open(
+            str(self.res_path / "shapes" / f"{obj_type}_simple.pickle"), "rb"
+        ) as f:
             return pickle.load(f)
 
     def __load_compound_shapes(self, obj_type):
-        with open(f"{self.res_path}shapes/{obj_type}.pickle", "rb") as f:
+        with open(
+            str(self.res_path / "shapes" / f"{obj_type}_simple.pickle"), "rb"
+        ) as f:
             return pickle.load(f)
 
     def __generate_object_list(

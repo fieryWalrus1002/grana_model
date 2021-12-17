@@ -68,23 +68,3 @@ class Particle(pymunk.Body):
 
     def diffusion_move(self, diffusion_distance, **kwargs):
         pass
-        # ''' generates movement in a random direction, up to 1 nm per timestep, which represents 12.5ns of time passed'''
-        # # what direction will this particule move? in radians
-        # theta = 2 * pi * random()
-
-        # # radius of our possible movement circle. random float between 0 and self.max_movement
-        # # OR whatever value is given by step_distance
-        # step_distance = kwargs.get('step_distance', random() * self.max_movement)
-
-        # # move in the random direction theta a distance equal to step_distance
-        # x1, y1 = (step_distance*cos(theta)) + self.body.position.x, self.body.position.y + (step_distance*sin(theta))
-
-        # # the distance traveled
-
-        # dist = sqrt((self.body.position.x - x1)**2 + (self.body.position.y - y1)**2)
-
-        # # the new position
-        # self.body.position = (x1, y1)
-
-        # # save the distance traveled
-        # self.travel_distance.append(dist)
