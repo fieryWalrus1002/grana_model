@@ -34,9 +34,9 @@ from pathlib import Path
 
 import pymunk
 
-from .collisionhandler import CollisionHandler
-from .psiistructure import PSIIStructure
-from .simulationenv import SimulationEnvironment
+from collisionhandler import CollisionHandler
+from psiistructure import PSIIStructure
+from simulationenv import SimulationEnvironment
 
 # from time import process_time, strftime
 

@@ -1,4 +1,4 @@
-from grana_model.particle import Particle
+from particle import Particle
 
 
 class DiffusionHandler:

@@ -1,8 +1,8 @@
 from pyglet.graphics import Batch
 from pymunk.space import Space
-from .psiistructure import PSIIStructure
-from .particle import Particle
-from .objectdata import ObjectData
+from psiistructure import PSIIStructure
+from particle import Particle
+from objectdata import ObjectData
 from random import random
 from math import cos, sin, pi
 

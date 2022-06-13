@@ -26,9 +26,9 @@ import pyglet
 # from grana_model.objectdata import ObjectDataExistingData, ObjectData
 # from grana_model.collisionhandler import CollisionHandler
 
-from .spawner import Spawner
-from .objectdata import ObjectDataExistingData, ObjectData
-from .collisionhandler import CollisionHandler
+from spawner import Spawner
+from objectdata import ObjectDataExistingData, ObjectData
+from collisionhandler import CollisionHandler
 
 
 class SimulationEnvironment:
