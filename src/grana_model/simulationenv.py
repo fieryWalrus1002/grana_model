@@ -21,26 +21,34 @@ Todo:
 """
 import pymunk
 import pyglet
-from grana_model.spawner import Spawner
-from grana_model.objectdata import ObjectDataExistingData, ObjectData
-from grana_model.collisionhandler import CollisionHandler
+
+# from grana_model.spawner import Spawner
+# from grana_model.objectdata import ObjectDataExistingData, ObjectData
+# from grana_model.collisionhandler import CollisionHandler
+
+from spawner import Spawner
+from objectdata import ObjectDataExistingData, ObjectData
+from collisionhandler import CollisionHandler
 
 
 class SimulationEnvironment:
     """represents a simulation environment, with pymunk.Space, PSIIStructures instantiated within it by a Spawner instance from a provided coord file."""
 
-    def __init__(self, pos_csv_filename: str, object_data_exists: bool):
+    def __init__(
+        self, pos_csv_filename: str, object_data_exists: bool, gui: bool = False
+    ):
         self.space = pymunk.Space()
-        self.batch = pyglet.graphics.Batch()
+        if gui:
+            self.batch = pyglet.graphics.Batch()
+        else:
+            self.batch = None
 
         if object_data_exists:
             object_data = ObjectDataExistingData(
                 pos_csv_filename=pos_csv_filename
             )
         else:
-            object_data = ObjectData(
-                pos_csv_filename=pos_csv_filename, res_path="res/"
-            )
+            object_data = ObjectData(pos_csv_filename=pos_csv_filename)
 
         self.spawner = Spawner(
             object_data=object_data,
@@ -50,6 +58,7 @@ class SimulationEnvironment:
             batch=self.batch,
             num_particles=0,
             num_psii=211,
+            use_sprites=False,
         )
 
         self.collision_handler = CollisionHandler(self.space)

@@ -2,6 +2,8 @@ import pyglet
 from math import degrees, sqrt
 import random
 from pymunk import Vec2d, Body, moment_for_circle, Poly, Space
+import os
+from pathlib import Path
 
 
 class PSIIStructure:
@@ -14,6 +16,7 @@ class PSIIStructure:
         pos: tuple[float, float],
         angle: float,
         mass=100,
+        use_sprites: bool = True,
     ):
         self.obj_dict = obj_dict
         self.type = obj_dict["obj_type"]
@@ -30,8 +33,8 @@ class PSIIStructure:
 
         shape_list, shape_str = self._create_shape_string(shape_type=shape_type)
         eval(shape_str)
-
-        self._assign_sprite(batch=batch)
+        if use_sprites:
+            self._assign_sprite(batch=batch)
 
     def _create_body(self, mass: float, angle: float):
         """create a pymunk.Body object with given mass, position, angle"""
@@ -63,7 +66,16 @@ class PSIIStructure:
 
     def _assign_sprite(self, batch):
         """loads the img and assigns it as a sprite to this obejct"""
-        img = pyglet.image.load(self.obj_dict["sprite"])
+        img_path = (
+            Path.cwd()
+            / "src"
+            / "grana_model"
+            / "res"
+            / "sprites"
+            / f"{self.obj_dict['sprite']}"
+        )
+        # src/grana_model/res/sprites/c2.png
+        img = pyglet.image.load(img_path)
         color = self.obj_dict["color"]
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
