@@ -79,6 +79,7 @@ class CollisionHandler:
 
     def draw_area_label(self, label_pos):
 
+        # draw the area label showing how much overlap there is
         area_text = f"object area/ grana area:{self.get_total_area()} / {round(pi * 200 **2, 2)} = {round(self.get_total_area() / (pi * 200 **2), 2)}"
         area_label = Label(
             area_text,
@@ -87,10 +88,26 @@ class CollisionHandler:
             x=label_pos[0],
             y=label_pos[1],
         )
-
         area_label.draw()
-        circle = Circle(200, 200, 200, color=(255, 0, 0))
-        circle.opacity = 50  # of 255
+
+    def draw_density_label(self, label_pos, num_objects, area: float = 1):
+
+        # draw the area label showing how much overlap there is
+        area_text = f"object area/ grana area:{self.get_total_area()} / {round(pi * 200 **2, 2)} = {round(self.get_total_area() / (pi * 200 **2), 2)}"
+        area_label = Label(
+            area_text,
+            font_name="Times New Roman",
+            font_size=10,
+            x=label_pos[0],
+            y=label_pos[1],
+        )
+        area_label.draw()
+
+
+    def draw_grana_circle(self, x:int = 200, y:int = 200, r:int = 200, opacity:int = 10, color:tuple = (255, 0, 0)):
+        # draw a red circle showing the grana area
+        circle = Circle(x, y, r, color=color)
+        circle.opacity = opacity  # of 255
         circle.draw()
 
     def get_total_area(self):

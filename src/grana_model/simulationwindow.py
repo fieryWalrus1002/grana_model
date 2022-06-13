@@ -7,6 +7,7 @@ from math import sqrt
 from math import pi
 import pymunk
 import pymunk.pyglet_util
+from densityhandler import DensityHandler
 
 
 class SimulationWindow(pyglet.window.Window):
@@ -25,9 +26,11 @@ class SimulationWindow(pyglet.window.Window):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        
         self.timer = timer
         self.spawner = spawner
         self.space = space
+        self.densityhandler = DensityHandler(space=self.space, x=200, y=200, width=100, height=100)
         self.batch = batch
         self.scoreboard = scoreboard
         self.diffusion_handler = diffusion_handler
@@ -333,14 +336,44 @@ class SimulationWindow(pyglet.window.Window):
         #         obstacle.undo()
         #         self.space.step(dt)
 
+    def get_shapes_in_rectangle(self, x, y, width, height):
+        num_objects = 0
+        
+        for o in self.obstacle_list:
+            x1, y1 = o.body.position
+
+            if x < x1 < x + width and y < y1 < y + height:
+                num_objects +=1
+
+        return num_objects
+
+
     def on_draw(self):
         self.clear()
         self.collision_handler.draw_collision_label(
             label_pos=(20, self.window_height - 35)
         )
-        self.collision_handler.draw_area_label(
-            label_pos=(20, self.window_height - 50)
-        )
+        
+        if self.spawner.spawn_type == 3:
+
+            num_objects = self.get_shapes_in_rectangle(self.densityhandler.x, self.densityhandler.y, self.densityhandler.width, self.densityhandler.height)
+
+            self.densityhandler.draw_density_label(
+                label_pos=(20, self.window_height - 50),
+                num_objects = num_objects
+            )
+            self.densityhandler.draw_rectangle()
+
+        # self.collision_handler.draw_density_label(
+        #     label_pos=(20, self.window_height - 50)
+        # )
+
+        # self.collision_handler.draw_area_label(
+        #     label_pos=(20, self.window_height - 50)
+        # )
+
+        # self.collision_handler.draw_grana_circle()
+
         self.fps_display.draw()
         # scoreboard.draw(label_pos=[20, window_height - 35])
         self.timer.draw_elapsed_time(label_pos=[20, self.window_height - 20])

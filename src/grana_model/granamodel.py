@@ -11,30 +11,35 @@ from spawner import Spawner
 # from grana_model.scale_test import Spawner
 from simulationwindow import SimulationWindow
 
+SIM_WIDTH = 500
+SIM_HEIGHT = 500
+
 
 def main():
     my_space = pymunk.Space()
     my_batch = pyglet.graphics.Batch()
     my_spawner = Spawner(
-        object_data=ObjectData(
-            pos_csv_filename="082620_SEM_final_coordinates.csv"
-        ),
-        spawn_type="psii_secondary_noparticles",
-        # spawn_type="psii_only",
-        # spawn_type="full",
+        object_data=ObjectData(pos_csv_filename="082620_SEM_final_coordinates.csv"),
+        spawn_type=3,
+        # 0: "psii_secondary_noparticles",
+        # 1: spawn_type="psii_only",
+        # 2: spawn_type="full",
+        # 3: LHCII only
         shape_type="complex",
         space=my_space,
         batch=my_batch,
         num_particles=0,
-        num_psii=200,
+        num_psii=0,
+        num_lhcii=126,
+        section=(200, 200, 100, 100),
     )
     collision_handler = CollisionHandler(
         my_space
     )  # has some custom collision callbacks
 
     window = SimulationWindow(
-        width=425,
-        height=475,
+        width=SIM_WIDTH,
+        height=SIM_HEIGHT,
         resizable=True,
         window_offset=(int(0.25 * 3440), int(0.05 * 1440)),
         batch=my_batch,
