@@ -160,6 +160,8 @@ class SimulationWindow(pyglet.window.Window):
                 )
 
     def on_key_press(self, symbol, modifiers):
+        if symbol == key.W:
+            self.query_shapes_in_section()
         if symbol == key.D:
             self.diffusion_handler.toggle_diffusion_state()
         if symbol == key.S:
@@ -200,6 +202,13 @@ class SimulationWindow(pyglet.window.Window):
             self.sprite_handler.change_rotation_factor(value=-0.1)
         if symbol == key.BRACKETRIGHT:
             self.sprite_handler.change_rotation_factor(value=0.1)
+
+
+    def query_shapes_in_section(self):            
+    
+        num_objects, objects_list = self.get_shapes_in_rectangle(self.densityhandler.x, self.densityhandler.y, self.densityhandler.width, self.densityhandler.height)
+
+        self.densityhandler.print_shapes_in_section(objects_list)
 
     def window_move(self, axis: int, dist: int):
         if axis == 0:
@@ -338,14 +347,16 @@ class SimulationWindow(pyglet.window.Window):
 
     def get_shapes_in_rectangle(self, x, y, width, height):
         num_objects = 0
+        objects_list = []
         
         for o in self.obstacle_list:
             x1, y1 = o.body.position
 
             if x < x1 < x + width and y < y1 < y + height:
                 num_objects +=1
+                objects_list.append(o)
 
-        return num_objects
+        return num_objects, objects_list
 
 
     def on_draw(self):
@@ -356,13 +367,16 @@ class SimulationWindow(pyglet.window.Window):
         
         if self.spawner.spawn_type == 3:
 
-            num_objects = self.get_shapes_in_rectangle(self.densityhandler.x, self.densityhandler.y, self.densityhandler.width, self.densityhandler.height)
+            num_objects, objects_list = self.get_shapes_in_rectangle(self.densityhandler.x, self.densityhandler.y, self.densityhandler.width, self.densityhandler.height)
 
             self.densityhandler.draw_density_label(
                 label_pos=(20, self.window_height - 50),
                 num_objects = num_objects
             )
+
             self.densityhandler.draw_rectangle()
+
+            
 
         # self.collision_handler.draw_density_label(
         #     label_pos=(20, self.window_height - 50)
@@ -381,4 +395,5 @@ class SimulationWindow(pyglet.window.Window):
         if self.sprite_handler.debug_draw == 0:
             self.space.debug_draw(self.options)
         else:
-            self.sprite_handler.draw(self.obstacle_list, batch=self.batch)
+            # self.sprite_handler.draw(self.obstacle_list, batch=self.batch)
+            pass

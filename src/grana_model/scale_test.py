@@ -111,12 +111,7 @@ class Spawner:
                 (12.51798561, 0),
             ],  # 25nm scale bar
             [(5.0, 0.0), (5.0, 5.0), (0.0, 5.0), (0.0, 0.0)],  # 25nm square
-            [
-                (50.0, 0),
-                (50.0, 10.0),
-                (-50.0, 10.0),
-                (-50.0, 0.0),
-            ],  # 100nm scale bar
+            [(50.0, 0), (50.0, 10.0), (-50.0, 10.0), (-50.0, 0.0),],  # 100nm scale bar
         ]
         type_list = ["c2s2m2", "25nm_scalebar", "5nm_square", "100nm_scalebar"]
         # object_list = [
@@ -138,9 +133,7 @@ class Spawner:
                 space=self.space,
                 batch=self.batch,
                 type=type_list[0],
-                position=self.random_pos_in_circle(
-                    max_radius=200, center=(200, 200)
-                ),
+                position=self.random_pos_in_circle(max_radius=200, center=(200, 200)),
                 coordinates=shape_list[0],
                 color=color_list[0],
             )

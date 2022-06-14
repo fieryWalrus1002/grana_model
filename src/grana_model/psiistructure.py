@@ -17,7 +17,10 @@ class PSIIStructure:
         angle: float,
         mass=100,
         use_sprites: bool = True,
+        move: float = 1
     ):
+        self.shape_list = []
+        self.move = move
         self.obj_dict = obj_dict
         self.type = obj_dict["obj_type"]
         self.origin_xy = pos
@@ -33,6 +36,9 @@ class PSIIStructure:
 
         shape_list, shape_str = self._create_shape_string(shape_type=shape_type)
         eval(shape_str)
+
+        self.shape_list = shape_list
+
         if use_sprites:
             self._assign_sprite(batch=batch)
 
@@ -262,6 +268,23 @@ class PSIIStructure:
             "old_value": start_pos,
             "new_value": self.body.position,
         }
+
+    def get_thermal_movement(self):
+        x = random.random() * self.move
+        y = random.random() * self.move
+        return (np.sin(x), np.cos(y))
+
+
+    def brownian_motion(self):
+        """ adjust position by brownian motion """
+
+        x, y = self.body.position
+
+        thermal_movement = self.get_thermal_movement()
+        self.body.position = (
+            x + thermal_movement[0],
+            y + thermal_movement[1],
+        )
 
     # ### random position
     #     # generate a new position within range of the origin, and move the object to that location

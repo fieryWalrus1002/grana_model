@@ -5,7 +5,7 @@ class SpriteHandler:
     def __init__(self):
         self.sprite_scale_factor = 0.03750000000000002
         self.rotation_factor = 0.0000000
-        self.debug_draw = 1
+        self.debug_draw = 0
 
     def toggle_debug_draw(self):
         self.debug_draw += 1
