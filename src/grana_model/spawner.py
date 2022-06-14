@@ -1,5 +1,6 @@
 from pyglet.graphics import Batch
 from pymunk.space import Space
+import pymunk
 from psiistructure import PSIIStructure
 from particle import Particle
 from objectdata import ObjectData
@@ -74,22 +75,25 @@ class Spawner:
         """
 
         if self.spawn_type == 1:
-            return self.spawn_psii(), self.spawn_particles_empty()
+            return self.spawn_psii(), self.spawn_particles_empty(), []
 
         if self.spawn_type == 2:
             return (
                 self.spawn_psii() + self.spawn_cytb6f() + self.spawn_lhcii(),
                 self.spawn_particles(),
+                []
             )
 
         if self.spawn_type == 3:
-            return (self.spawn_lhcii(), self.spawn_particles_empty())
+
+            return (self.spawn_lhcii(), self.spawn_particles_empty(), self.spawn_boundaries())
 
         else:
             # default is type 0
             return (
                 self.spawn_psii() + self.spawn_cytb6f() + self.spawn_lhcii(),
                 self.spawn_particles_empty(),
+                []
             )
 
     def spawn_psii(self):
@@ -184,3 +188,28 @@ class Spawner:
             for _ in range(0, int(self.ratio_free_LHC * self.num_psii))
         ]
         return cytb6f_list
+
+    def spawn_boundaries(self):
+        static_lines = [
+            pymunk.Segment(self.space.static_body, (200, 200), (200, 300), 1),
+            pymunk.Segment(self.space.static_body, (200, 300), (300, 300), 1),
+            pymunk.Segment(self.space.static_body, (300, 300), (300, 200), 1),
+            pymunk.Segment(self.space.static_body, (200, 200), (300, 200), 1),
+
+        ]
+
+        for line in static_lines:
+            line.sensor = True
+            line.color = (0, 0, 255, 128)
+            line.elasticity = 1.0
+            line.collision_type = 3 # boundary
+        
+        self.space.add(*static_lines)
+    
+        return static_lines
+        
+        
+        
+
+
+  

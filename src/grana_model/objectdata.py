@@ -5,6 +5,7 @@ from math import pi
 import numpy as np
 import pickle
 import os
+import glob
 
 
 class ObjectData:
@@ -256,5 +257,17 @@ class ObjectDataExistingData(ObjectData):
     #     ]
 
 
+def create_shape_list(filename):
+    """ import csv files to create a shape list, then pickle and save it"""
+    filelist = glob.glob(f"{filename}*.csv")
+
+    new_shape_list = [pd.read_csv(file).values.tolist() for file in filelist]
+
+    with open(f'{filename}.pickle', 'wb') as fh:
+        pickle.dump(new_shape_list, fh)
+    
+
+
 if __name__ == "__main__":
-    pass
+    create_shape_list(filename="14062022_1256_LHCII_subshape")
+    

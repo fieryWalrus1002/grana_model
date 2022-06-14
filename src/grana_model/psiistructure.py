@@ -4,7 +4,7 @@ import random
 from pymunk import Vec2d, Body, moment_for_circle, Poly, Space
 import os
 from pathlib import Path
-
+from math import cos, sin, pi
 
 class PSIIStructure:
     def __init__(
@@ -49,7 +49,7 @@ class PSIIStructure:
             mass=mass, inner_radius=0, outer_radius=10, offset=(0, 0)
         )
 
-        if self.type in ["C2S2M2", "C2S2M", "C2S2", "C2", "C1"]:
+        if self.type in ["C2S2M2", "C2S2M", "C2S2", "C2", "C1", "LHCII"]:
             body = Body(mass=mass, moment=inertia, body_type=Body.KINEMATIC)
         else:
             body = Body(mass=mass, moment=inertia, body_type=Body.DYNAMIC)
@@ -270,9 +270,9 @@ class PSIIStructure:
         }
 
     def get_thermal_movement(self):
-        x = random.random() * self.move
-        y = random.random() * self.move
-        return (np.sin(x), np.cos(y))
+        x = (random.random() * self.move) - self.move
+        y = (random.random() * self.move) - self.move
+        return (sin(x), cos(y))
 
 
     def brownian_motion(self):
