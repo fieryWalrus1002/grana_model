@@ -25,31 +25,23 @@ def main():
         # 1: spawn_type="psii_only",
         # 2: spawn_type="full",
         # 3: LHCII only
-        shape_type="complex",
+        shape_type="simple",
         space=my_space,
         batch=my_batch,
         num_particles=0,
         num_psii=0,
-        num_lhcii=100,
+        num_lhcii=50,
         section=(200, 200, 100, 100),
     )
-    collision_handler = CollisionHandler(
-        my_space
-    )  # has some custom collision callbacks
 
     window = SimulationWindow(
         width=SIM_WIDTH,
         height=SIM_HEIGHT,
         resizable=True,
         window_offset=(int(0.25 * 3440), int(0.05 * 1440)),
-        batch=my_batch,
         space=my_space,
         spawner=my_spawner,
         timer=SimulationTimer(),
-        scoreboard=Scoreboard(),
-        diffusion_handler=DiffusionHandler(),
-        sprite_handler=SpriteHandler(),
-        collision_handler=collision_handler,
     )
 
     # fps_display = pyglet.window.FPSDisplay(window=window)

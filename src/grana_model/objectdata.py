@@ -263,11 +263,10 @@ def create_shape_list(filename):
 
     new_shape_list = [pd.read_csv(file).values.tolist() for file in filelist]
 
-    with open(f'{filename}.pickle', 'wb') as fh:
+    with open(f"{filename}.pickle", "wb") as fh:
         pickle.dump(new_shape_list, fh)
-    
 
 
 if __name__ == "__main__":
-    create_shape_list(filename="14062022_1256_LHCII_subshape")
-    
+    create_shape_list(filename="17062022_1220_LHCII_subshape")
+

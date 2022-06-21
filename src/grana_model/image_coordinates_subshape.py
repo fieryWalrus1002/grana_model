@@ -9,7 +9,7 @@ from pymunk.pyglet_util import DrawOptions
 import csv
 from pathlib import Path
 
-
+NUM_LISTS = 1000
 PX_TO_NM_CONVERSION = 25 / 695
 NM_TO_PX_CONVERSION = 695 / 25
 print(f"25 nm is {NM_TO_PX_CONVERSION * 25} pixels")
@@ -37,14 +37,7 @@ obstacle_list = []
 sprite_list = []
 
 # set global variables
-ratio_free_LHC = 0.67
 batch = pyglet.graphics.Batch()
-obstacle_count = 1000
-particle_count = 1000
-PQ_diffusion_force = (
-    0.1  # should yield a mean movement distance of around 1nm per 12.5ns
-)
-FORCE_CHANGE_INCREMENT = 0.05
 
 # random colors for the subshapes
 def random_color():
@@ -309,63 +302,63 @@ class SimulationWindow(pyglet.window.Window):
         self.sc_types = [
             {
                 "name": "C2S2M2",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
             {
                 "name": "C2S2M",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
             {
                 "name": "C2S2",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
             {
                 "name": "C2S",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
             {
                 "name": "C2",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
             {
                 "name": "C1",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
             {
                 "name": "CP43-freecore",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
             {
                 "name": "LHCII",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
             {
                 "name": "LHCII-monomer",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
             {
                 "name": "cytb6f",
-                "points": create_list_of_lists(100),
-                "circles": create_list_of_lists(100),
-                "pygpoints": create_list_of_lists(100),
+                "points": create_list_of_lists(NUM_LISTS),
+                "circles": create_list_of_lists(NUM_LISTS),
+                "pygpoints": create_list_of_lists(NUM_LISTS),
             },
         ]
 
@@ -388,7 +381,7 @@ class SimulationWindow(pyglet.window.Window):
         self.circles = self.sc_type["circles"]
         self.pygpoints = self.sc_type["pygpoints"]
         # self.labels = self.sc_type["labels"]
-        self.subshape_colors = [random_color() for x in range(0, 100)]
+        self.subshape_colors = [random_color() for x in range(0, NUM_LISTS)]
 
     def change_subshape(self, subshape_change):
         self.current_subshape += subshape_change

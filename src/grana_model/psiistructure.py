@@ -19,6 +19,8 @@ class PSIIStructure:
         use_sprites: bool = True,
         move: float = 1
     ):
+        self.mass = mass
+        self.space = space
         self.shape_list = []
         self.move = move
         self.obj_dict = obj_dict
@@ -42,20 +44,63 @@ class PSIIStructure:
         if use_sprites:
             self._assign_sprite(batch=batch)
 
-    def _create_body(self, mass: float, angle: float):
+    def exchange_simple_for_complex(self):
+        """ remove the simple body and shapes from the space, and replace them with
+        the complex shapes with the same position and rotation"""
+
+        for s in self.body.shapes:
+        # for s in self.shape_list:
+            self.space.remove(s)
+        
+        # old body position and angle
+        position = self.body.position
+        angle = self.body.angle
+        
+        # remove old body
+        self.space.remove(self.body)
+        
+        # create new body with old parameters
+        self.body = self._create_body(mass=self.mass, angle=angle, position=position)
+
+        # get coordinates for complex shapes
+        coord_list = self.obj_dict["shapes_compound"]
+        
+        # create new shapes
+        self.shape_list = [
+            self._create_shape(shape_coord=shape_coord)
+            for shape_coord in coord_list
+        ]
+
+        # add new shapes and body to the space
+        self.space.add(self.body, *self.shape_list)
+        
+        # reindex shapes for collisions
+        self.space.reindex_shapes_for_body(self.body)
+       
+        
+
+    def _create_body(self, mass: float, angle: float, position=None):
         """create a pymunk.Body object with given mass, position, angle"""
 
         inertia = moment_for_circle(
             mass=mass, inner_radius=0, outer_radius=10, offset=(0, 0)
         )
 
-        if self.type in ["C2S2M2", "C2S2M", "C2S2", "C2", "C1", "LHCII"]:
+        if self.type in ["C2S2M2", "C2S2M", "C2S2", "C2", "C1"]:
             body = Body(mass=mass, moment=inertia, body_type=Body.KINEMATIC)
         else:
             body = Body(mass=mass, moment=inertia, body_type=Body.DYNAMIC)
 
-        body.position = self.origin_xy  # given pos
-        body.angle = angle
+        if position is None:
+            body.position = self.origin_xy  # given pos
+            
+            # random angle to start with
+            body.angle = 2 * pi * random.random()
+
+        else:
+            body.position = position
+            body.angle = angle
+
         body.velocity_func = self.limit_velocity  # limit velocity
 
         return body
@@ -126,7 +171,8 @@ class PSIIStructure:
         my_shape = Poly(self.body, vertices=shape_coord)
 
         my_shape.color = self.obj_dict["color"]
-
+        my_shape.friction = 0.04
+        my_shape.elasticity = 0.0
         my_shape.collision_type = 1
 
         return my_shape

@@ -1,7 +1,7 @@
 from pyglet.text import Label
 from math import pi
 from pyglet.shapes import Circle, Rectangle
-
+import pymunk
 
 class DensityHandler:
     def __init__(
@@ -11,6 +11,8 @@ class DensityHandler:
         y: float = 150.0,
         width: int = 100,
         height: int = 100,
+        in_color: tuple = (0, 0, 0, 0),
+        out_color: tuple = (0, 0, 0, 0)
     ):
         self.space = space
         self.num_objects = 0
@@ -18,75 +20,81 @@ class DensityHandler:
         self.height = height
         self.x = x
         self.y = y
+        self.area_counter = 0
+        self.internal_area = 0
+        self.total_area = 0
+        self.ensemble_area = width * height
+        self.in_color = in_color
+        self.out_color = out_color
 
-    def draw_density_label(self, label_pos, num_objects: int = 1):
-
-        area_text = f"subsection density({num_objects}/{self.width * self.height} nm^2) = {num_objects / (self.width * self.height)}"
+    def draw_density_label(self, label_pos: tuple = (200, 300)):
+        area_text = (
+            f"ensemble density: {self.internal_area / (self.ensemble_area)}"
+        )
         area_label = Label(
             area_text,
             font_name="Times New Roman",
-            font_size=10,
+            font_size=5,
             x=label_pos[0],
             y=label_pos[1],
         )
         area_label.draw()
+        print(f"ensemble density = {self.internal_area / (self.ensemble_area)}")
 
     def draw_rectangle(self, opacity: int = 75, color: tuple = (255, 0, 0)):
         rectangle = Rectangle(self.x, self.y, self.width, self.height, color=color)
         rectangle.opacity = opacity
         rectangle.draw()
 
-    def print_shapes_in_section(
-        self,
-        objects_list,
-        section_x: float = 200.0,
-        section_y: float = 200.0,
-        width: float = 100.0,
-        height: float = 100.0,
-    ):
+    def update_area_calculations(self, obstacle_list):
+        self.area_counter += 1
 
-            # is shape in section
-        xmin = section_x
-        xmax = section_x + width
-        ymin = section_y
-        ymax = section_y + height
+        total_area = 0.0
+        internal_area = 0.0
 
-        # print(f"section coordinates: ({xmin}, {ymin}), ({xmin + width}, {ymin + height}")
-        for i, o in enumerate(objects_list):
-            # get body position
-            x, y = o.body.position
+        for o in obstacle_list:
 
-            for j, s in enumerate(o.shape_list):
-                # get transform for shape attached to body
-                x1, y1 = s.center_of_gravity
+            for s in o.shape_list:
+                total_area += s.area
 
-                # calculate shape position
-                x2 = x + x1
-                y2 = y + y1
+                if s.color != self.out_color:
+                    internal_area += s.area
 
+        self.internal_area = internal_area
+        self.total_area = total_area
+        return internal_area, total_area
 
+    def create_ensemble_area_sensor(self):
+        """ create a sensor box for the ensemble, that will be used to detect what 
+        shapes are within the 100x100nm box when determing area """
 
-                if x2 < xmin:
-                    print(f"{j} x < xmin :{x2} < {xmin}")
-                    s.color = (255, 255, 0, 100)
-                elif x2 > xmax:
-                    print(f"{j} x > xmax :{x2} > {xmax}")
-                    s.color = (255, 255, 0, 100)
-                elif y2 < ymin:
-                    print(f"{j} y2 < ymin :{y2} < {ymin}")
-                    s.color = (255, 255, 0, 100)
-                elif y2 > ymax:
-                    print(f"{j} y2 > ymax :{y2} > {ymax}")
-                    s.color = (255, 255, 0, 100)
-                    # # print shape position
-                else:
-                    s.color=(0, 255, 0, 100)
-                    
+        boundary_color = (0, 1, 1, 0)
+        body = pymunk.Body(pymunk.Body.STATIC)
+        body.position = (250, 250)
+        shape = pymunk.Poly.create_box(body, (100, 100), radius=1)
+        shape.color = boundary_color
+        # shape.mass = 1000000
+        shape.collision_type = 3  # boundary
+        shape.sensor = True
+        # shape.elasticity = 1.0
+        # shape.friction = 0.0
+        self.space.add(body, shape)
+        return body
+        # return Box(self.space)
 
+    def spawn_boundaries(self):
+        left = self.create_rectangle_static(100, 0, 200, 1000)
+        right = self.create_rectangle_static(400, 0, 200, 1000)
+        up = self.create_rectangle_static(250, 400, 1000, 200)
+        down = self.create_rectangle_static(250, 100, 1000, 200)
+        return [left, right, up, down]
 
-                #     print(f"{i}, {j}: {x2}, {y2}, between {xmin} and {xmax} and between {ymin} and {ymax}")
-                #     s.color = (0, 255, 0, 100)
-                # else:
-
-
-
+    def create_rectangle_static(self, pos_x, pos_y, width, height):
+        body = pymunk.Body(body_type=pymunk.Body.STATIC)
+        body.position = (pos_x, pos_y)
+        shape = pymunk.Poly.create_box(body, (width, height))
+        shape.sensor = True
+        shape.collision_type = 3
+        shape.color = (0, 0, 0, 0)
+        self.space.add(body, shape)
+        return shape
