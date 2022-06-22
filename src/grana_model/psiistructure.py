@@ -5,6 +5,43 @@ from pymunk import Vec2d, Body, moment_for_circle, Poly, Space
 import os
 from pathlib import Path
 from math import cos, sin, pi
+from abc import ABC, abstractmethod
+
+class DistanceMagnitude(ABC):
+    def __init__(self, threshold: float = 10.0):
+        self.threshold = threshold
+
+    @abstractmethod
+    def get_distance_scalar(self, distance):
+        '''takes a distance and returns a vector scaled according to a particular algorithm''' 
+        return 0
+
+class WellMagnitude(DistanceMagnitude):
+    def get_distance_scalar(self, distance):
+        """ if distance is greater than a threshold, it returns 0. otherwise, 1."""
+        if distance > self.threshold:
+            return 0
+        else:
+            return 1
+
+class AttractionPoint:
+    ''' class to store values for attraction point variables.
+    parent: the parent object. we reference it when we assign vectors.
+    type = 'point', 'side'
+    distance_scalar: the chosen method for scaling vectors by distance
+    '''
+    def __init__(self, parent, type: int, distance_scalar: DistanceMagnitude, offset_coords: tuple, batch):
+        self.parent = parent
+        self.distance_scalar = distance_scalar.get_distance_scalar
+        self.type = type
+        self.offset_coords = offset_coords
+        self.batch = batch
+
+    def get_world_coords(self):
+        """ TODO: verify they are being rotated """
+        x, y = self.offset_coords
+
+        return self.parent.body.position + Vec2d(x, y).rotated(self.parent.body.angle)        
 
 class PSIIStructure:
     def __init__(
@@ -43,6 +80,21 @@ class PSIIStructure:
 
         if use_sprites:
             self._assign_sprite(batch=batch)
+
+        
+        self.attraction_points = {
+                'p1': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='point', offset_coords=(3.92, 1.26), batch=batch),
+                'p2': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='point', offset_coords=(-3.13, 3.06), batch=batch),
+                'p3': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='point', offset_coords=(-0.97, -4.24), batch=batch),
+                's1': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='side', offset_coords=(0.68, 3.02), batch=batch),
+                's2': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='side', offset_coords=(-3.17, -1.08), batch=batch),
+                's3': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='side', offset_coords=(2.3, -1.98), batch=batch)
+                }
+
+
+    def get_attraction_points(self):
+        """ return a list of the attraction points for this structure """
+        return [p for p in self.attraction_points.values()]
 
     def exchange_simple_for_complex(self):
         """ remove the simple body and shapes from the space, and replace them with

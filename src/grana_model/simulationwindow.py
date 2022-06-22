@@ -8,6 +8,8 @@ from math import pi
 import pymunk
 import pymunk.pyglet_util
 from densityhandler import DensityHandler
+from diffusionhandler import LHCIIAttractionHandler
+from pymunk.space_debug_draw_options import SpaceDebugColor
 
 out_color = (
     250,
@@ -33,9 +35,9 @@ class SimulationWindow(pyglet.window.Window):
         self.spawner = spawner
         self.space = space
         self.sensor = None
-        
+        self.batch = pyglet.graphics.Batch()
         self.collision_handler = self.create_sensor_collision_handler()
-        
+        self.attractionhandler = LHCIIAttractionHandler(distance_threshold=100)
         self.densityhandler = DensityHandler(
             space=self.space, x=200, y=200, width=100, height=100, in_color = in_color, out_color = out_color
         )
@@ -73,7 +75,11 @@ class SimulationWindow(pyglet.window.Window):
             0.0  # holds the current radius selected for exporting a subset of objects
         )
 
+        self.dots_to_draw = []
+
         self.initialze_simulation()
+
+
 
     def configure_draw_options(self):
         self.draw_options = pymunk.pyglet_util.DrawOptions()
@@ -359,12 +365,27 @@ class SimulationWindow(pyglet.window.Window):
         return True
 
     def update(self, dt):
+
+        
+
         self.space.step(dt)
+
+        self.attractionhandler.handle_attraction_forces(self.obstacle_list)
+        
+        self.dots_to_draw = self.attractionhandler.get_dots()
+
 
     def on_draw(self):
         self.clear()
 
         self.fps_display.draw()
-
+        
         self.space.debug_draw(self.draw_options)
+        
+        yay_dots = [pyglet.shapes.Circle(dot[0], dot[1], radius=0.25, color =(250, 250, 230), batch = self.batch) for dot in self.dots_to_draw]
 
+        self.batch.draw()
+
+        
+
+        
