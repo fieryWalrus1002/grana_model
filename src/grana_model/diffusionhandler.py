@@ -59,14 +59,35 @@ class LHCIIAttractionHandler:
                 o1_points = o1.get_attraction_points()
                 o2_points = o2.get_attraction_points()
 
-                # get sklearn cartesian product of the two lists as a dataframe
-                df = pd.DataFrame(cartesian((o1_points, o2_points)))
-
+                # save the points for drawing them in the simulation visualization space
                 for p in o1_points + o2_points:
                     self.points_to_draw.append(p.get_world_coords())
+
+                # print(f'o1.position: {o1.body.position}, o2.position: {o2.body.position}')
+                for o1pt in o1_points:  
+                  pt1 = o1pt.get_world_coords()
+                  
+                  for o2pt in o2_points:
+                    pt2 = o2pt.get_world_coords()
+
+                    
+                  
                                
     def get_dots(self):
         return self.points_to_draw
+
+
+    def calculate_attraction_between_objects(self, df):
+        """ takes the combinations of points in a dataframe, and calculates the vectors
+        of attraction between each of the points.  """
+        print(df.head())
+
+
+
+        out_df = {'1': {'p1': p1_vector, 'p2': p2_vector, 'p3': p3_vector, 's1': s1_vector, 's2': s2_vector, 's3': o1_s3_vector}}
+
+
+
 
     # def get_distance(self, pos1, pos2):
     #     """ return the euclidean distance between two xy positions """

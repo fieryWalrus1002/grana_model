@@ -41,7 +41,11 @@ class AttractionPoint:
         """ TODO: verify they are being rotated """
         x, y = self.offset_coords
 
-        return self.parent.body.position + Vec2d(x, y).rotated(self.parent.body.angle)        
+        return self.parent.body.position + Vec2d(x, y).rotated(self.parent.body.angle)
+
+    def calc_vector(self, other_point):
+        """ TODO: write code to calculate attraction vector between these two points, and add it to the parent's vector list"""
+        return 1
 
 class PSIIStructure:
     def __init__(
@@ -56,6 +60,7 @@ class PSIIStructure:
         use_sprites: bool = True,
         move: float = 1
     ):
+        self.vector_list = [] # holds vectors that will be used to calculate movement force
         self.mass = mass
         self.space = space
         self.shape_list = []
