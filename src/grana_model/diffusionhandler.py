@@ -27,71 +27,57 @@ class DiffusionHandler:
 
 
 class LHCIIAttractionHandler:
-    """ 
-    handles the calculation of attraction vectors between objects and their 
+    """
+    handles the calculation of attraction vectors between objects and their
     attraction points
-    
+
     distance_threshold : determines the maximum distance between two objects before
-                        their attraction vectors will no longer possibly affect each other. 
+                        their attraction vectors will no longer possibly affect each other.
     """
 
     def __init__(self, distance_threshold: float = 10.0):
         self.distance_threshold = distance_threshold
         self.points_to_draw = []
 
-    def handle_attraction_forces(self, object_list):
+    def get_points_to_draw(self, object_list: list):
+        """ go through the object list and calculate the world coordinates for each
+        of the attraction points. return the list of coordinates so they can be drawn
         """
-        get a list of all combinations of objects, and calculate the forces between 
+
+        points_to_draw = []
+
+        for o in object_list:
+            o_points = o.get_attraction_points()
+    
+            for p in o_points:
+                points_to_draw.append(p.get_world_coords())
+
+        return points_to_draw
+
+    def calculate_attraction_forces(self, object_list):
+        """
+        get a list of all combinations of objects, and calculate the forces between
         each of them that are within a certain distance threshold
         """
 
+        # create list of all combinations of objects that can attract each other
         all_combinations = itertools.combinations(object_list, 2)
-        self.points_to_draw = []
 
-        for c in all_combinations:
-            o1 = c[0]
-            o2 = c[1]
-
-            # dist = self.get_distance(o1.body.position, o2.body.position)
+        # filter by distance_threshold
+        for o1, o2 in all_combinations:
+            # check to see if they objects are within a certain distance threshold. if
+            # they are outside, we won't bother calculating attraction vectors
             dist = o1.body.position.get_distance(o2.body.position)
 
             if dist < self.distance_threshold:
-                o1_points = o1.get_attraction_points()
-                o2_points = o2.get_attraction_points()
+                # calculate all the vectors for object 1 toward object 2
+                o1.calculate_attraction_to_object(o2)
 
-                # save the points for drawing them in the simulation visualization space
-                for p in o1_points + o2_points:
-                    self.points_to_draw.append(p.get_world_coords())
+                # then calculate all vectors for object 2 toward object
+                o2.calculate_attraction_to_object(o1)
 
-                # print(f'o1.position: {o1.body.position}, o2.position: {o2.body.position}')
-                for o1pt in o1_points:  
-                  pt1 = o1pt.get_world_coords()
-                  
-                  for o2pt in o2_points:
-                    pt2 = o2pt.get_world_coords()
-
-                    
-                  
-                               
-    def get_dots(self):
-        return self.points_to_draw
+    def apply_all_vectors(self, object_list):
+        for o in object_list:
+            o.apply_vectors()
 
 
-    def calculate_attraction_between_objects(self, df):
-        """ takes the combinations of points in a dataframe, and calculates the vectors
-        of attraction between each of the points.  """
-        print(df.head())
-
-
-
-        out_df = {'1': {'p1': p1_vector, 'p2': p2_vector, 'p3': p3_vector, 's1': s1_vector, 's2': s2_vector, 's3': o1_s3_vector}}
-
-
-
-
-    # def get_distance(self, pos1, pos2):
-    #     """ return the euclidean distance between two xy positions """
-    #     x0, y0 = pos1
-    #     x1, y1 = pos2
-
-    #     return np.sqrt(np.power(x0 - x1) + np.power(y0 - y1))

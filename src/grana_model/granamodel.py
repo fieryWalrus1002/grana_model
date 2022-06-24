@@ -30,7 +30,7 @@ def main():
         batch=my_batch,
         num_particles=0,
         num_psii=0,
-        num_lhcii=50,
+        num_lhcii=2,
         section=(200, 200, 100, 100),
     )
 

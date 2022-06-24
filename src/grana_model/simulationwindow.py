@@ -10,6 +10,8 @@ import pymunk.pyglet_util
 from densityhandler import DensityHandler
 from diffusionhandler import LHCIIAttractionHandler
 from pymunk.space_debug_draw_options import SpaceDebugColor
+import time
+
 
 out_color = (
     250,
@@ -18,6 +20,7 @@ out_color = (
     50,
 )
 in_color = (0, 51, 0, 255)  # usual LHCII color
+
 
 class SimulationWindow(pyglet.window.Window):
     def __init__(
@@ -30,7 +33,7 @@ class SimulationWindow(pyglet.window.Window):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        
+
         self.timer = timer
         self.spawner = spawner
         self.space = space
@@ -39,13 +42,18 @@ class SimulationWindow(pyglet.window.Window):
         self.collision_handler = self.create_sensor_collision_handler()
         self.attractionhandler = LHCIIAttractionHandler(distance_threshold=100)
         self.densityhandler = DensityHandler(
-            space=self.space, x=200, y=200, width=100, height=100, in_color = in_color, out_color = out_color
+            space=self.space,
+            x=200,
+            y=200,
+            width=100,
+            height=100,
+            in_color=in_color,
+            out_color=out_color,
         )
-        
-               
+
         # set damping for sapce
         self.space.damping = 0.9
-        
+
         self.fps_display = pyglet.window.FPSDisplay(window=self)
 
         self.set_location(window_offset[0], window_offset[1])
@@ -75,11 +83,9 @@ class SimulationWindow(pyglet.window.Window):
             0.0  # holds the current radius selected for exporting a subset of objects
         )
 
-        self.dots_to_draw = []
+        self.attraction_point_coords = []
 
         self.initialze_simulation()
-
-
 
     def configure_draw_options(self):
         self.draw_options = pymunk.pyglet_util.DrawOptions()
@@ -101,7 +107,6 @@ class SimulationWindow(pyglet.window.Window):
         boundaries = self.densityhandler.spawn_boundaries()
         for b in boundaries:
             b.color = (0, 0, 0, 0)
-
 
     def get_nm_coordinates(self, pyg_pos: tuple[float, float]):
 
@@ -140,20 +145,24 @@ class SimulationWindow(pyglet.window.Window):
                 )
 
     def shape_exchange(self):
-        """ exchange all simple shapes for complex shapes """
+        """exchange all simple shapes for complex shapes"""
         for o in self.obstacle_list:
             o.exchange_simple_for_complex()
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.A:
             # calculate the area within the ensemble boundaries
-            internal_area, total_area = self.densityhandler.update_area_calculations(self.obstacle_list)
+            internal_area, total_area = self.densityhandler.update_area_calculations(
+                self.obstacle_list
+            )
             ensemble_area = self.densityhandler.ensemble_area
 
-            print(f"ensemble density = {round(internal_area / (ensemble_area), 2)}, interior_shape_area: {internal_area}, total_shape_area: {total_area}, ensemble_area: {ensemble_area}")
+            print(
+                f"ensemble density = {round(internal_area / (ensemble_area), 2)}, interior_shape_area: {internal_area}, total_shape_area: {total_area}, ensemble_area: {ensemble_area}"
+            )
 
         if symbol == key.B:
-            # activate shape exchange            
+            # activate shape exchange
             self.shape_exchange()
         if symbol == key.C:
             # center the grana in the screen and scale it up a bit
@@ -256,7 +265,7 @@ class SimulationWindow(pyglet.window.Window):
             self.sel_radius = sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
             # calculate selection area
-            self.selection_area = pi * self.sel_radius ** 2
+            self.selection_area = pi * self.sel_radius**2
             print(f"unadjusted coords: {x}, {y}")
             print(
                 f"coordinates {self.cursor_xy} selected as origin, radius = {self.sel_radius}, area = {self.selection_area}"
@@ -352,40 +361,51 @@ class SimulationWindow(pyglet.window.Window):
         return True
 
     def bound_coll_separate(self, arbiter, space, data):
-        # if the shape separates from the boundary, and it is within the ensemble area, 
+        # if the shape separates from the boundary, and it is within the ensemble area,
         # add its area back to the internal_area calculation
-        arbiter.shapes[0].color = in_color     
-        
+        arbiter.shapes[0].color = in_color
+
         # s = arbiter.shapes[0]
         # x, y = s.center_of_gravity
-        
+
         # if 200 < x < 300 and 200 < y < 300:
-            
 
         return True
 
     def update(self, dt):
+        # zero all vectors
+        for o in self.obstacle_list:
+            o.vector_list = []
 
-        
+        # tell all LHCII to update their attraction vectors for this next step
+        self.attractionhandler.calculate_attraction_forces(self.obstacle_list)
 
+        # apply all vectors to each LHCII particle
+        self.attractionhandler.apply_all_vectors(self.obstacle_list)
+
+        # get a list of attraction point coordinates to draw during on_draw() call
+        self.attraction_point_coords = self.attractionhandler.get_points_to_draw(
+            self.obstacle_list
+        )
+
+        # update simulation one step
         self.space.step(dt)
 
-        self.attractionhandler.handle_attraction_forces(self.obstacle_list)
-        
-        self.dots_to_draw = self.attractionhandler.get_dots()
-
+        time.sleep(1)
 
     def on_draw(self):
         self.clear()
 
         self.fps_display.draw()
-        
+
         self.space.debug_draw(self.draw_options)
-        
-        yay_dots = [pyglet.shapes.Circle(dot[0], dot[1], radius=0.25, color =(250, 250, 230), batch = self.batch) for dot in self.dots_to_draw]
+
+        # list comprehension to draw all the attraction points
+        yay_dots = [
+            pyglet.shapes.Circle(
+                dot[0], dot[1], radius=0.25, color=(250, 250, 230), batch=self.batch
+            )
+            for dot in self.attraction_point_coords
+        ]
 
         self.batch.draw()
-
-        
-
-        

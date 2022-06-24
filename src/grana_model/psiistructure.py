@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 from math import cos, sin, pi
 from abc import ABC, abstractmethod
+import numpy as np
+
 
 class DistanceMagnitude(ABC):
     def __init__(self, threshold: float = 10.0):
@@ -13,24 +15,34 @@ class DistanceMagnitude(ABC):
 
     @abstractmethod
     def get_distance_scalar(self, distance):
-        '''takes a distance and returns a vector scaled according to a particular algorithm''' 
+        """takes a distance and returns a vector scaled according to a particular algorithm"""
         return 0
+
 
 class WellMagnitude(DistanceMagnitude):
     def get_distance_scalar(self, distance):
-        """ if distance is greater than a threshold, it returns 0. otherwise, 1."""
+        """if distance is greater than a threshold, it returns 0. otherwise, 1."""
         if distance > self.threshold:
             return 0
         else:
             return 1
 
+
 class AttractionPoint:
-    ''' class to store values for attraction point variables.
+    """class to store values for attraction point variables.
     parent: the parent object. we reference it when we assign vectors.
     type = 'point', 'side'
     distance_scalar: the chosen method for scaling vectors by distance
-    '''
-    def __init__(self, parent, type: int, distance_scalar: DistanceMagnitude, offset_coords: tuple, batch):
+    """
+
+    def __init__(
+        self,
+        parent,
+        type: int,
+        distance_scalar: DistanceMagnitude,
+        offset_coords: tuple,
+        batch,
+    ):
         self.parent = parent
         self.distance_scalar = distance_scalar.get_distance_scalar
         self.type = type
@@ -38,14 +50,29 @@ class AttractionPoint:
         self.batch = batch
 
     def get_world_coords(self):
-        """ TODO: verify they are being rotated """
+        """TODO: verify they are being rotated"""
         x, y = self.offset_coords
 
         return self.parent.body.position + Vec2d(x, y).rotated(self.parent.body.angle)
 
-    def calc_vector(self, other_point):
-        """ TODO: write code to calculate attraction vector between these two points, and add it to the parent's vector list"""
-        return 1
+    def calc_vector(self, v2):
+        """TODO: write code to calculate attraction vector between these two points, and return the vector"""
+        v1 = self.get_world_coords()
+        
+        # vector between the two points
+        vm = v2 - v1
+
+        # magnitude of that vector
+        v_mag =  np.sqrt(np.power(0.01 - vm[0], 2) + np.power(0.01 - vm[1], 2)).astype(
+            np.float
+        )
+
+        v_inv = v1 - v2
+
+        v3 = np.divide(v_inv, v_mag)
+
+        return Vec2d(v3[0], v3[1])
+
 
 class PSIIStructure:
     def __init__(
@@ -58,9 +85,12 @@ class PSIIStructure:
         angle: float,
         mass=100,
         use_sprites: bool = True,
-        move: float = 1
+        move: float = 1,
+        move_factor: float = 25.0
     ):
-        self.vector_list = [] # holds vectors that will be used to calculate movement force
+        self.vector_list = (
+            []
+        )  # holds vectors that will be used to calculate movement force
         self.mass = mass
         self.space = space
         self.shape_list = []
@@ -75,6 +105,7 @@ class PSIIStructure:
             "new_value": angle,
         }
         self.new_scale = 100
+        self.move_factor = move_factor
 
         self.body = self._create_body(mass=mass, angle=angle)
 
@@ -86,55 +117,158 @@ class PSIIStructure:
         if use_sprites:
             self._assign_sprite(batch=batch)
 
-        
         self.attraction_points = {
-                'p1': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='point', offset_coords=(3.92, 1.26), batch=batch),
-                'p2': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='point', offset_coords=(-3.13, 3.06), batch=batch),
-                'p3': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='point', offset_coords=(-0.97, -4.24), batch=batch),
-                's1': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='side', offset_coords=(0.68, 3.02), batch=batch),
-                's2': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='side', offset_coords=(-3.17, -1.08), batch=batch),
-                's3': AttractionPoint(parent = self, distance_scalar = WellMagnitude(), type='side', offset_coords=(2.3, -1.98), batch=batch)
-                }
+            "p1": AttractionPoint(
+                parent=self,
+                distance_scalar=WellMagnitude(),
+                type="point",
+                offset_coords=(3.92, 1.26),
+                batch=batch,
+            ),
+            "p2": AttractionPoint(
+                parent=self,
+                distance_scalar=WellMagnitude(),
+                type="point",
+                offset_coords=(-3.13, 3.06),
+                batch=batch,
+            ),
+            "p3": AttractionPoint(
+                parent=self,
+                distance_scalar=WellMagnitude(),
+                type="point",
+                offset_coords=(-0.97, -4.24),
+                batch=batch,
+            ),
+            "s1": AttractionPoint(
+                parent=self,
+                distance_scalar=WellMagnitude(),
+                type="side",
+                offset_coords=(0.68, 3.02),
+                batch=batch,
+            ),
+            "s2": AttractionPoint(
+                parent=self,
+                distance_scalar=WellMagnitude(),
+                type="side",
+                offset_coords=(-3.17, -1.08),
+                batch=batch,
+            ),
+            "s3": AttractionPoint(
+                parent=self,
+                distance_scalar=WellMagnitude(),
+                type="side",
+                offset_coords=(2.3, -1.98),
+                batch=batch,
+            ),
+        }
 
+
+
+
+    def vec_mag(self, v1: Vec2d, v2: Vec2d):
+        """ take two vectors and calculate the magnitude of the vector between them"""
+        return np.sqrt(np.power(v1[0] - v2[0], 2) + np.power(v1[1] - v2[1], 2)).astype(
+            np.float
+        )
+
+    def vec_norm(self, v1: Vec2d, v2: Vec2d):
+        """ return unit vector between v1 and v2 and magnitude"""
+        vm = v2 - v1
+        mag = self.vec_mag(np.array([0.01, 0.01]), vm)
+        v1 = v1 - v2
+        v3 = np.divide(v1, mag)
+        return v3, mag
+
+    def get_thermal_movement(self) -> Vec2d:
+        """generate random vector for thermal movement"""
+        x = random.random() * self.move
+        y = random.random() * self.move
+
+        return Vec2d(np.sin(x), np.cos(y))
+
+    def apply_vectors(self) -> None:
+        
+        # get sum of all vectors in vector_list
+        vec_sum = Vec2d(0, 0)
+        
+        for v in self.vector_list:
+            vec_sum += v
+
+        # use vec_sum to create a unit vector scaled by a self.move_factor
+        v_force, _ = self.vec_norm(vec_sum, Vec2d(0, 0))
+
+        v_force = Vec2d(v_force[0] * self.move_factor, v_force[1] * self.move_factor)
+        
+        # calculate thermal movement
+        thermal_movement = self.get_thermal_movement()
+
+        v_force += thermal_movement
+
+        print(v_force)
+        # apply the vectors as an impulse    
+        self.body.apply_impulse_at_local_point(v_force)
+        
+        # self.body.position = (
+        #     x + self.v_force[0] + thermal_movement[0],
+        #     y + self.v_force[1] + thermal_movement[1],
+        # )
 
     def get_attraction_points(self):
-        """ return a list of the attraction points for this structure """
+        """return a list of the attraction points for this structure"""
         return [p for p in self.attraction_points.values()]
 
+    def calculate_attraction_to_object(self, other_object):
+        """this function calculates the attraction forces between each attraction point
+        in this object toward each attraction point in other_object, and adds them to
+        this objects vector list"""
+
+        # get all attraction points for the other object
+        o2_points = other_object.get_attraction_points()
+
+        for o1pt in self.attraction_points.values():
+            # for each point in obstacle 1, get the world coordinates
+            pt1 = o1pt.get_world_coords()
+
+            # now iterate through all the attraction points in obstacle 2
+            for o2pt in o2_points:
+
+                # calculate the attraction vector from pt1 toward the other point
+                v = o1pt.calc_vector(o2pt.get_world_coords())
+
+                # append the vector to this object's vector list
+                self.vector_list.append(v)
+
     def exchange_simple_for_complex(self):
-        """ remove the simple body and shapes from the space, and replace them with
+        """remove the simple body and shapes from the space, and replace them with
         the complex shapes with the same position and rotation"""
 
         for s in self.body.shapes:
-        # for s in self.shape_list:
+            # for s in self.shape_list:
             self.space.remove(s)
-        
+
         # old body position and angle
         position = self.body.position
         angle = self.body.angle
-        
+
         # remove old body
         self.space.remove(self.body)
-        
+
         # create new body with old parameters
         self.body = self._create_body(mass=self.mass, angle=angle, position=position)
 
         # get coordinates for complex shapes
         coord_list = self.obj_dict["shapes_compound"]
-        
+
         # create new shapes
         self.shape_list = [
-            self._create_shape(shape_coord=shape_coord)
-            for shape_coord in coord_list
+            self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list
         ]
 
         # add new shapes and body to the space
         self.space.add(self.body, *self.shape_list)
-        
+
         # reindex shapes for collisions
         self.space.reindex_shapes_for_body(self.body)
-       
-        
 
     def _create_body(self, mass: float, angle: float, position=None):
         """create a pymunk.Body object with given mass, position, angle"""
@@ -150,7 +284,7 @@ class PSIIStructure:
 
         if position is None:
             body.position = self.origin_xy  # given pos
-            
+
             # random angle to start with
             body.angle = 2 * pi * random.random()
 
@@ -182,7 +316,6 @@ class PSIIStructure:
             / "sprites"
             / f"{self.obj_dict['sprite']}"
         )
-        # src/grana_model/res/sprites/c2.png
         img = pyglet.image.load(img_path)
         color = self.obj_dict["color"]
         img.anchor_x = img.width // 2
@@ -195,7 +328,6 @@ class PSIIStructure:
         spr_color = (color[0], color[1], color[2])
         self.sprite.color = spr_color
         self.sprite.rotation = degrees(-self.body.angle)
-        # obstacle_dict["sprite_list"].append(self.sprite)
 
     def _create_shape_string(self, shape_type: str):
         """create a shape_string that when provided as
@@ -208,20 +340,13 @@ class PSIIStructure:
         else:
             coord_list = self.obj_dict["shapes_compound"]
         shape_list = [
-            self._create_shape(shape_coord=shape_coord)
-            for shape_coord in coord_list
+            self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list
         ]
 
         return (
             shape_list,
             f"space.add(self.body, {','.join([str(f'shape_list[{i}]') for i, shape in enumerate(shape_list)])})",
         )
-
-        # str_out = f"space.add({str_command})"
-
-        # print(str_out)
-
-        # return shape_list, str_out
 
     def _create_shape(self, shape_coord: tuple):
         """creates a shape"""
@@ -244,12 +369,6 @@ class PSIIStructure:
     def get_current_pos(self):
         self.current_xy = (self.body.x, self.body.y)
 
-    def go_home(self):
-        direction = Vec2d(
-            x=self.origin_xy[0] / 10000, y=self.origin_xy[1] / 10000
-        )
-        self.body.apply_force_at_local_point(force=direction, point=(0, 0))
-
     def limit_velocity(self, body, gravity, damping, dt):
         max_velocity = 1
         Body.update_velocity(body, gravity, damping, dt)
@@ -258,156 +377,3 @@ class PSIIStructure:
             scale = max_velocity / body_velocity_length
             body.velocity = body.velocity * scale
 
-    def undo(self):
-        if self.last_action["action"] == "rotate":
-            self.body.angle = self.last_action["old_value"]
-        if self.last_action["action"] == "move":
-            self.body.position = self.last_action["old_value"]
-
-    # def action(self, action_num):
-    #     if action_num == 0:
-    #         # up
-    #         self.move("up")
-    #         pass
-    #     if action_num == 1:
-    #         # down
-    #         self.move("down")
-    #         pass
-    #     if action_num == 2:
-    #         # right
-    #         self.move("right")
-    #         pass
-    #     if action_num == 3:
-    #         # left
-    #         self.move("left")
-    #         pass
-    #     if action_num == 4:
-    #         # rotate left
-    #         self.rotate(direction=0)
-    #         pass
-    #     if action_num == 5:
-    #         # rotate right
-    #         self.rotate(direction=1)
-    #         pass
-
-    def action(self, action_num):
-        if action_num <= 4:
-            self.move(random.randint(0, 3), step_dist=0.25)
-        if action_num == 5:
-            # rotate left
-            self.rotate(direction=0)
-            pass
-        if action_num == 6:
-            # rotate right
-            self.rotate(direction=1)
-            pass
-
-    def rotate(self, direction):
-        current_angle = self.body.angle
-        # random_angle = random() * 2 * 0.0174533
-        random_angle = random.random() * 15 * 0.0174533  # up to 15 degrees
-        if direction == 0:
-            # rotate left
-            new_angle = current_angle + random_angle
-
-            self.last_action = {
-                "action": "rotate",
-                "old_value": current_angle,
-                "new_value": new_angle,
-            }
-        else:
-            # rotate right
-            new_angle = current_angle - random_angle
-
-            self.last_action = {
-                "action": "rotate",
-                "old_value": current_angle,
-                "new_value": new_angle,
-            }
-        # set the new angle
-        self.body.angle = new_angle
-
-    def move(self, direction, step_dist=1):
-        step_distance = random.random() * step_dist
-
-        # move in a direction but end within the tether distance
-        # body.position.x and body.position.y can be modified, but the new position has to be within the distance of 1nm in any direction from the origin point.
-        x0, y0 = self.origin_xy
-        start_pos = self.body.position
-        tether_radius = 1
-
-        # the current dist from tether, starts too high because it is updated
-        dist = 1000.0
-
-        # is this a valid location?
-        while dist > tether_radius and step_distance > 0:
-            # will start as current pos
-            x1, y1 = self.body.position
-
-            # move in a direction the step distance
-            if direction == 0:
-                y1 += step_distance
-            if direction == 1:
-                y1 -= step_distance
-            if direction == 2:
-                x1 += step_distance
-            if direction == 3:
-                x1 -= step_distance
-
-            # calculate the new distance from the tether point
-            dist = sqrt(((x0 - x1) ** 2) + ((y0 - y1) ** 2))
-
-            # each attempt will reduce the step distance a tiny amount
-            step_distance -= 0.01
-
-        # the new position is within the tether range, so lets assign it
-        # if you didn't move at all, then you didn't move so keep your existing position
-        if step_distance > 0:
-            self.body.position = (x1, y1)
-
-        # save the action so we can undo it later if needed
-        self.last_action = {
-            "action": "move",
-            "old_value": start_pos,
-            "new_value": self.body.position,
-        }
-
-    def get_thermal_movement(self):
-        x = (random.random() * self.move) - self.move
-        y = (random.random() * self.move) - self.move
-        return (sin(x), cos(y))
-
-
-    def brownian_motion(self):
-        """ adjust position by brownian motion """
-
-        x, y = self.body.position
-
-        thermal_movement = self.get_thermal_movement()
-        self.body.position = (
-            x + thermal_movement[0],
-            y + thermal_movement[1],
-        )
-
-    # ### random position
-    #     # generate a new position within range of the origin, and move the object to that location
-    #     # new position
-    #     # random angle
-    #     alpha = 2 * pi * random()
-
-    #     # random radius, random float between 0 to 1 * tether_radius
-    #     r = random() * tether_radius
-
-    #     t = 2 * pi * random()
-
-    #     # new (x, y) tuple
-    #     random_pos = ((r*cos(t)) + x0, y0 + (r*sin(t)))
-    #     # x1, y1 = obstacle.body.position
-
-    #     #     # calculate distance from given point
-    #     #     euc_dist = sqrt((x1-x)**2 + (y1-y)**2)
-
-    #     #     # if the distance is less than the radius
-    #     #     # add it to the selected obj list
-    #     #     if euc_dist <= radius:
-    #     #         sel_obj.append(obstacle)
