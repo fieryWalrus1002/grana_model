@@ -40,7 +40,7 @@ class SimulationWindow(pyglet.window.Window):
         self.sensor = None
         self.batch = pyglet.graphics.Batch()
         self.collision_handler = self.create_sensor_collision_handler()
-        self.attractionhandler = LHCIIAttractionHandler(distance_threshold=100)
+        self.attractionhandler = LHCIIAttractionHandler()
         self.densityhandler = DensityHandler(
             space=self.space,
             x=200,
@@ -50,9 +50,6 @@ class SimulationWindow(pyglet.window.Window):
             in_color=in_color,
             out_color=out_color,
         )
-
-        # set damping for sapce
-        self.space.damping = 0.9
 
         self.fps_display = pyglet.window.FPSDisplay(window=self)
 
@@ -193,6 +190,8 @@ class SimulationWindow(pyglet.window.Window):
         if symbol == key.S:
             # self.sprite_handler.toggle_debug_draw()
             pass
+        if symbol == key.V:
+            self.attractionhandler.toggle_attraction_forces()
         if symbol == key.W:
             self.query_shapes_in_section()
         if symbol == key.X:
@@ -369,10 +368,10 @@ class SimulationWindow(pyglet.window.Window):
         # x, y = s.center_of_gravity
 
         # if 200 < x < 300 and 200 < y < 300:
-
         return True
 
     def update(self, dt):
+    
         # zero all vectors
         for o in self.obstacle_list:
             o.vector_list = []
@@ -381,17 +380,15 @@ class SimulationWindow(pyglet.window.Window):
         self.attractionhandler.calculate_attraction_forces(self.obstacle_list)
 
         # apply all vectors to each LHCII particle
-        self.attractionhandler.apply_all_vectors(self.obstacle_list)
+        self.attractionhandler.apply_all_vectors(self.obstacle_list, attraction_enabled = self.attractionhandler.enabled)
+
+        # update simulation one step
+        self.space.step(dt)
 
         # get a list of attraction point coordinates to draw during on_draw() call
         self.attraction_point_coords = self.attractionhandler.get_points_to_draw(
             self.obstacle_list
         )
-
-        # update simulation one step
-        self.space.step(dt)
-
-        time.sleep(1)
 
     def on_draw(self):
         self.clear()

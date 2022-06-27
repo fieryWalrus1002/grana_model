@@ -35,9 +35,16 @@ class LHCIIAttractionHandler:
                         their attraction vectors will no longer possibly affect each other.
     """
 
-    def __init__(self, distance_threshold: float = 10.0):
+    def __init__(self, distance_threshold: float = 1000.0):
         self.distance_threshold = distance_threshold
         self.points_to_draw = []
+        self.enabled = False
+
+    def toggle_attraction_forces(self):
+        if self.enabled == False:
+            self.enabled = True
+        else:
+            self.enabled = False
 
     def get_points_to_draw(self, object_list: list):
         """ go through the object list and calculate the world coordinates for each
@@ -76,8 +83,9 @@ class LHCIIAttractionHandler:
                 # then calculate all vectors for object 2 toward object
                 o2.calculate_attraction_to_object(o1)
 
-    def apply_all_vectors(self, object_list):
+    def apply_all_vectors(self, object_list, rotation_scalar: float = 1.0, attraction_enabled: bool = False):
         for o in object_list:
-            o.apply_vectors()
+            o.apply_vectors(attraction_enabled)
+            o.thermal_rotation(rotation_scalar=rotation_scalar)
 
 

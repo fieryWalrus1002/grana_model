@@ -14,9 +14,19 @@ from simulationwindow import SimulationWindow
 SIM_WIDTH = 500
 SIM_HEIGHT = 500
 
+# To control object movememnt, adjust the following:
+# self.space.damping : determines the percenatage of velocity that is kept from previous step
+# diffusion_factor : scalar for the thermal movement vector
+# body.mass : the mass of the body affects how it responds to impulses
+# attraction_factor: scalar for the attraction points vectors
+#
+
 
 def main():
-    my_space = pymunk.Space()
+    my_space = configure_space(
+        threaded=True,
+        damping=0.0,
+    )
     my_batch = pyglet.graphics.Batch()
     my_spawner = Spawner(
         object_data=ObjectData(pos_csv_filename="082620_SEM_final_coordinates.csv"),
@@ -32,6 +42,16 @@ def main():
         num_psii=0,
         num_lhcii=2,
         section=(200, 200, 100, 100),
+        structure_dict={
+            "LHCII": {
+                "distance_scalar": "well",
+                "diffusion_scalar": 10000.0,
+                "distance_threshold": 50.0,
+                "mass": 1000.0,
+                "mass_scalar": 1.0,
+                "rotation_scalar": 0.01,
+            }
+        },
     )
 
     window = SimulationWindow(
@@ -47,6 +67,12 @@ def main():
     # fps_display = pyglet.window.FPSDisplay(window=window)
     pyglet.clock.schedule_interval(window.update, 1.0 / 60.0)
     pyglet.app.run()
+
+
+def configure_space(threaded: bool = False, damping: float = 0.1):
+    space = pymunk.Space(threaded=threaded)
+    space.damping = damping
+    return space
 
 
 if __name__ == "__main__":

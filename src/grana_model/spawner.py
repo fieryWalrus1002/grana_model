@@ -18,13 +18,16 @@ class Spawner:
         shape_type: str,
         space: Space,
         batch: Batch,
+        structure_dict: dict,
         spawn_type: int = 0,
         num_particles: int = 1000,
         num_psii: int = 1000,
         num_lhcii: int = 0,
         use_sprites: bool = True,
         section: tuple = (100, 100, 100, 100),  # x, y, width, height
+    
     ):
+        self.structure_dict = structure_dict
         self.object_data = object_data
         self.num_psii = num_psii
         self.num_particles = num_particles
@@ -66,7 +69,7 @@ class Spawner:
 
     def setup_model(self):
         """instantiates particles and obstacles according to spawner provided spawn_type
-        
+
         spawn_type:
         0: "psii_secondary_noparticles",
         1: spawn_type="psii_only",
@@ -86,11 +89,7 @@ class Spawner:
 
         if self.spawn_type == 3:
 
-            return (
-                self.spawn_lhcii(),
-                self.spawn_particles_empty(),
-                []
-            )
+            return (self.spawn_lhcii(), self.spawn_particles_empty(), [])
 
         else:
             # default is type 0
@@ -134,7 +133,9 @@ class Spawner:
         """
         object_list = [
             Particle(
-                space=self.space, batch=self.batch, pos=self.random_pos_in_circle(),
+                space=self.space,
+                batch=self.batch,
+                pos=self.random_pos_in_circle(),
             )
             for _ in range(0, self.num_particles)
         ]
@@ -158,6 +159,7 @@ class Spawner:
                     pos=self.random_pos_in_circle(),
                     angle=self.random_angle(),
                     use_sprites=self.use_sprites,
+                    structure_dict = self.structure_dict["LHCII"]
                 )
                 for _ in range(0, int(self.ratio_free_LHC * self.num_psii))
             ]
@@ -172,6 +174,7 @@ class Spawner:
                     pos=self.random_pos_in_section(),
                     angle=self.random_angle(),
                     use_sprites=self.use_sprites,
+                    structure_dict = self.structure_dict["LHCII"]
                 )
                 for _ in range(0, self.num_lhcii)
             ]
@@ -192,5 +195,3 @@ class Spawner:
             for _ in range(0, int(self.ratio_free_LHC * self.num_psii))
         ]
         return cytb6f_list
-
-
