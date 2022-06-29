@@ -7,6 +7,9 @@ from pathlib import Path
 from math import cos, sin, pi
 from abc import ABC, abstractmethod
 import numpy as np
+import pandas as pd
+import csv
+import datetime
 
 MAX_V = 1000
 V_SCALAR = 10.0
@@ -44,7 +47,7 @@ class LinearScaledMagnitude(DistanceMagnitude):
 
         distance = self.get_distance(pt1, pt2)
 
-        distance_scalar = ((self.threshold - distance) / self.threshold)
+        distance_scalar = (self.threshold - distance) / self.threshold
 
         if distance < self.threshold:
             return distance_scalar
@@ -127,16 +130,20 @@ class PSIIStructure:
         structure_dict: dict,
         use_sprites: bool = True,
     ):
+        self.active = True
+        self.id_num = random.randint(1000, 9999)
         self.structure_dict = structure_dict
         self.vector_list = (
             []
         )  # holds vectors that will be used to calculate movement force
-        
+        self.logging = True
         self.space = space
         self.shape_list = []
         self.obj_dict = obj_dict
         self.type = obj_dict["obj_type"]
         self.origin_xy = pos
+        self.origin_angle = angle
+        self.time_step = 0
         self.current_xy = pos
         self.last_action = {
             "action": "rotate",
@@ -146,6 +153,25 @@ class PSIIStructure:
         self.new_scale = 100
 
         self.unpack_structure_dict(structure_dict)
+
+        self.dparams = {
+            "d": 0.125,
+            "time_per_step": 2,  # 2ns
+            "exp_disp": 1,  # 1 nm
+            "move_history": pd.DataFrame(columns=["x", "y", "angle"]),
+            "current_displacement": 0,  # current displacement value per step
+        }
+
+        self.displacement = pd.DataFrame(
+            columns=[
+                "time",
+                "displacement",
+                "rot_from_origin",
+                "mass",
+                "rotation_scalar",
+                "diffusion_scalar",
+            ]
+        )
 
         self.body = self._create_body(mass=self.mass, angle=angle)
 
@@ -214,6 +240,60 @@ class PSIIStructure:
             ),
         }
 
+    def log_displacement(self):
+        """Calculate the currend displacement from origin, and log to dataframe"""
+        if self.active:
+            # set original position if this is step 0
+            if self.time_step == 0:
+                self.origin_xy = self.body.position
+
+            x0, y0 = self.origin_xy
+            x1, y1 = self.body.position
+
+            current_disp = round(
+                np.sqrt(np.power(x0 - x1, 2) + np.power(y0 - y1, 2)), 3
+            )
+
+            time_ns = self.time_step * self.dparams["time_per_step"]
+            self.time_step += 1
+
+            rot_from_start = self.body.angle - self.origin_angle
+
+            self.displacement.loc[len(self.displacement.index)] = [
+                time_ns,
+                current_disp,
+                rot_from_start,
+                self.mass,
+                self.rotation_scalar,
+                self.diffusion_scalar,
+            ]
+
+            # if self.time_step % 100 == 0:
+            #     print(f"t: {time_ns}, disp: {current_disp}")
+
+            if self.time_step % self.structure_dict["simulation_limit"] == 0:
+                if self.logging:
+                    self.save_log()
+                    self.active = False
+
+    def save_log(self):
+        now = datetime.datetime.now()
+        dt_string = now.strftime("%d%m%Y")
+        filename = (
+            Path.cwd()
+            / "src"
+            / "grana_model"
+            / "res"
+            / "log"
+            / f"{dt_string}_displacement_data.csv"
+        )
+
+        # if file exist, append:
+        if not os.path.exists(filename):
+            self.displacement.to_csv(filename, index=False)
+        else:
+            self.displacement.to_csv(filename, mode="a", index=False, header=False)
+
     def unpack_structure_dict(self, structure_dict):
         self.distance_threshold = structure_dict["distance_threshold"]
         self.diffusion_scalar = structure_dict["diffusion_scalar"]
@@ -249,43 +329,43 @@ class PSIIStructure:
         t = random.random() * np.pi * 2
         x = radius * np.cos(t)
         y = radius * np.sin(t)
-        return Vec2d(x, y)
+        return Vec2d(x * random.random(), y * random.random())
 
     def thermal_rotation(self, rotation_scalar: float):
         t = (random.random() - 0.5) * 2 * np.pi * self.rotation_scalar
         self.body.angle += t
 
-    def apply_vectors(self, attraction_enabled:bool = False) -> None:
+    def apply_vectors(self, attraction_enabled: bool = False) -> None:
 
-        if attraction_enabled:
-            # get sum of all vectors in vector_li
-            vec_sum = Vec2d(0, 0)
+        if self.active:
+            # log displacement from origin
+            self.log_displacement()
 
-            for v in self.vector_list:
-                vec_sum += v
+            if attraction_enabled == False:
+                # calculate thermal movement and apply it only
+                thermal_movement = self.get_thermal_movement(
+                    radius=self.diffusion_scalar
+                )
+                self.body.apply_impulse_at_local_point(thermal_movement)
 
-            vhat, _ = self.vec_norm(vec_sum, Vec2d(0, 0))
+            else:
+                # get sum of all vectors in vector_list
+                vec_sum = Vec2d(0, 0)
 
-            # calculate thermal movement
-            thermal_movement = self.get_thermal_movement(radius=self.diffusion_scalar)        
+                for v in self.vector_list:
+                    vec_sum += v
 
-            # add thermal movement to v_force
-                        
-            print(f"thermal_movement: {thermal_movement}, vhat: {vhat}")
+                # create unit vector of vec_sum
+                vhat, _ = self.vec_norm(vec_sum, Vec2d(0, 0))
 
-            # apply the vectors as an impulse
-            # self.body.apply_impulse_at_local_point(
-            #     vec_sum, self.random_pos_in_structure(r=3)
-            # )
-            self.body.apply_impulse_at_local_point(vhat)
-            self.body.apply_impulse_at_local_point(thermal_movement)
-        else:
-            # calculate thermal movement
-            thermal_movement = self.get_thermal_movement(radius=self.diffusion_scalar)
-            self.body.apply_impulse_at_local_point(thermal_movement)
+                # calculate thermal movement
+                thermal_movement = self.get_thermal_movement(
+                    radius=self.diffusion_scalar
+                )
 
-        
-
+                # apply both vhat and thermal_movement
+                self.body.apply_impulse_at_local_point(vhat)
+                self.body.apply_impulse_at_local_point(thermal_movement)
 
     def random_pos_in_structure(self, r: float = 1.0):
         """returns a random Vec2d with a radius of r  for impulse application direction"""
@@ -300,19 +380,20 @@ class PSIIStructure:
         in this object toward each attraction point in other_object, and adds them to
         this objects vector list"""
 
-        # get all attraction points for the other object
-        o2_points = other_object.get_attraction_points()
+        if self.active:
+            # get all attraction points for the other object
+            o2_points = other_object.get_attraction_points()
 
-        for o1pt in self.attraction_points.values():
+            for o1pt in self.attraction_points.values():
 
-            # now iterate through all the attraction points in obstacle 2
-            for o2pt in o2_points:
+                # now iterate through all the attraction points in obstacle 2
+                for o2pt in o2_points:
 
-                # calculate the attraction vector from pt1 toward the other point
-                v = o1pt.calc_vector(o2pt.get_world_coords())
+                    # calculate the attraction vector from pt1 toward the other point
+                    v = o1pt.calc_vector(o2pt.get_world_coords())
 
-                # append the vector to this object's vector list
-                self.vector_list.append(v)
+                    # append the vector to this object's vector list
+                    self.vector_list.append(v)
 
     def exchange_simple_for_complex(self):
         """remove the simple body and shapes from the space, and replace them with

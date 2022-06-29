@@ -20,45 +20,76 @@ Todo:
 
 """
 import pymunk
-import pyglet
-
-# from grana_model.spawner import Spawner
-# from grana_model.objectdata import ObjectDataExistingData, ObjectData
-# from grana_model.collisionhandler import CollisionHandler
-
-from spawner import Spawner
-from objectdata import ObjectDataExistingData, ObjectData
-from collisionhandler import CollisionHandler
+import time
 
 
 class SimulationEnvironment:
     """represents a simulation environment, with pymunk.Space, PSIIStructures instantiated within it by a Spawner instance from a provided coord file."""
 
     def __init__(
-        self, pos_csv_filename: str, object_data_exists: bool, gui: bool = False
+        self,
+        spawner,
+        space,
+        object_data,
+        attraction_handler,
+        dt: float = 0.01666667,
+        damping: float = 0.1,
     ):
-        self.space = pymunk.Space()
-        if gui:
-            self.batch = pyglet.graphics.Batch()
-        else:
-            self.batch = None
+        # simulation components
+        self.space = space
+        self.attraction_handler = attraction_handler
+        self.spawner = spawner
+        self.object_data = object_data
 
-        if object_data_exists:
-            object_data = ObjectDataExistingData(
-                pos_csv_filename=pos_csv_filename
-            )
-        else:
-            object_data = ObjectData(pos_csv_filename=pos_csv_filename)
-
-        self.spawner = Spawner(
-            object_data=object_data,
-            spawn_type="psii_only",
-            shape_type="complex",
-            space=self.space,
-            batch=self.batch,
-            num_particles=0,
-            num_psii=211,
-            use_sprites=False,
+        # simulation variables
+        self.active = True
+        self.dt = dt
+        self.space.damping = damping
+        self.attraction_point_coords = []
+        self.attraction_handler.enabled = (
+            False  # false for only brownian motion, not attraction forces
         )
 
-        self.collision_handler = CollisionHandler(self.space)
+    def check_for_active(self):
+        """ Search through all objects, and return FALSE if any have active==False"""
+
+        object_status = [o.active for o in self.obstacle_list]
+        
+        if False in object_status:
+            return False
+        else:
+            return True
+
+    def run(self):
+        """ creates the obstacles and begins running the simulation"""
+        self.obstacle_list, self.particle_list, _ = self.spawner.setup_model()
+
+        while self.check_for_active():
+            self.step()
+
+
+    def step(self):
+        # zero all vectors
+        self.attraction_handler.reset_vectors_for_all_objects(self.obstacle_list)
+
+        # tell all LHCII to update their attraction vectors for this next step
+        self.attraction_handler.calculate_attraction_forces(self.obstacle_list)
+
+        # apply all vectors to each LHCII particle, if attraction_handler.enabled is True. Else, just do thermal movement and rotation.
+        self.attraction_handler.apply_all_vectors(
+            self.obstacle_list, attraction_enabled=self.attraction_handler.enabled
+        )
+
+        # update simulation one step
+        self.space.step(self.dt)
+
+        # get a list of attraction point coordinates to draw during on_draw() call
+        self.attraction_point_coords = self.attraction_handler.get_points_to_draw(
+            self.obstacle_list
+        )
+
+        
+
+    
+    def fight(self):
+        return "we fight now"

@@ -29,11 +29,12 @@ class SimulationWindow(pyglet.window.Window):
         space,
         spawner,
         timer,
+        draw_shapes,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-
+        self.draw_shapes = draw_shapes
         self.timer = timer
         self.spawner = spawner
         self.space = space
@@ -373,13 +374,12 @@ class SimulationWindow(pyglet.window.Window):
     def update(self, dt):
     
         # zero all vectors
-        for o in self.obstacle_list:
-            o.vector_list = []
+        self.attractionhandler.reset_vectors_for_all_objects(self.obstacle_list)
 
         # tell all LHCII to update their attraction vectors for this next step
         self.attractionhandler.calculate_attraction_forces(self.obstacle_list)
 
-        # apply all vectors to each LHCII particle
+        # apply all vectors to each LHCII particle, if attractionhandler.enabled is True. Else, just do thermal movement and rotation.
         self.attractionhandler.apply_all_vectors(self.obstacle_list, attraction_enabled = self.attractionhandler.enabled)
 
         # update simulation one step
@@ -390,19 +390,22 @@ class SimulationWindow(pyglet.window.Window):
             self.obstacle_list
         )
 
+
+
     def on_draw(self):
         self.clear()
 
         self.fps_display.draw()
 
-        self.space.debug_draw(self.draw_options)
+        if self.draw_shapes:
+            self.space.debug_draw(self.draw_options)
 
-        # list comprehension to draw all the attraction points
-        yay_dots = [
-            pyglet.shapes.Circle(
-                dot[0], dot[1], radius=0.25, color=(250, 250, 230), batch=self.batch
-            )
-            for dot in self.attraction_point_coords
-        ]
+            # list comprehension to draw all the attraction points
+            yay_dots = [
+                pyglet.shapes.Circle(
+                    dot[0], dot[1], radius=0.25, color=(250, 250, 230), batch=self.batch
+                )
+                for dot in self.attraction_point_coords
+            ]
 
-        self.batch.draw()
+            self.batch.draw()

@@ -21,7 +21,6 @@ SIM_HEIGHT = 500
 # attraction_factor: scalar for the attraction points vectors
 #
 
-
 def main():
     my_space = configure_space(
         threaded=True,
@@ -40,12 +39,13 @@ def main():
         batch=my_batch,
         num_particles=0,
         num_psii=0,
-        num_lhcii=2,
+        num_lhcii=1,
         section=(200, 200, 100, 100),
         structure_dict={
             "LHCII": {
+                "simulation_limit": 1000,
                 "distance_scalar": "well",
-                "diffusion_scalar": 10000.0,
+                "diffusion_scalar": 1000.0,
                 "distance_threshold": 50.0,
                 "mass": 1000.0,
                 "mass_scalar": 1.0,
@@ -62,11 +62,14 @@ def main():
         space=my_space,
         spawner=my_spawner,
         timer=SimulationTimer(),
+        draw_shapes=False,
     )
 
     # fps_display = pyglet.window.FPSDisplay(window=window)
     pyglet.clock.schedule_interval(window.update, 1.0 / 60.0)
     pyglet.app.run()
+    print("app done")
+    window.close()
 
 
 def configure_space(threaded: bool = False, damping: float = 0.1):
@@ -76,4 +79,8 @@ def configure_space(threaded: bool = False, damping: float = 0.1):
 
 
 if __name__ == "__main__":
-    main()
+
+    for i in range(10):
+
+        print(f"iteration {i}")
+        main()
