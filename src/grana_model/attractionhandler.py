@@ -66,5 +66,3 @@ class AttractionHandler:
         for o in object_list:
             o.apply_vectors(attraction_enabled)
             o.thermal_rotation(rotation_scalar=rotation_scalar)
-
-

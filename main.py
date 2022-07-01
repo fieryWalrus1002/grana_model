@@ -4,8 +4,7 @@ from src.grana_model.spawner import Spawner
 from src.grana_model.objectdata import ObjectData
 import pymunk
 
-REPS = 100
-
+REPS = 10000
 
 def main():
 
@@ -36,13 +35,19 @@ def main():
             ),  # determines the section of grana that the LHCII will use for the ensemble area
             structure_dict={
                 "LHCII": {
+                    "d": 1.8e-9,  # 1.8e-9 in cm2/s
+                    "d_rot": 2e3,  # 2 x 10^3  rad^2 s^(-1)
                     "simulation_limit": 1000,
                     "distance_scalar": "well",
-                    "diffusion_scalar": 10.0,
+                    "diffusion_scalar": 1.22e3,  # average over 250 steps, gave us this number for keeping step_nm equal to calculated step
                     "distance_threshold": 50.0,
-                    "mass": 1000.0,
+                    "mass": 1.0e3,
                     "mass_scalar": 1.0,
-                    "rotation_scalar": 0.1,
+                    "rotation_scalar": 1.785e-3,  # average over 250 steps, gave us this number to use
+                    "time_per_step": 2,  # in ns
+                    "average_step_over": 250,
+                    "calibrate_rot_d": False,
+                    "calibrate_diff_d": False,
                 }
             },
         )

@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 import csv
 import datetime
+from .dcalibrator import DCalibrator
+
 
 MAX_V = 1000
 V_SCALAR = 10.0
@@ -145,22 +147,35 @@ class PSIIStructure:
         self.origin_angle = angle
         self.time_step = 0
         self.current_xy = pos
+
+        self.time_per_step = structure_dict["time_per_step"]
+        
+        self.dcalibrator = DCalibrator(structure_dict)      
+    
+        
         self.last_action = {
             "action": "rotate",
             "old_value": angle,
             "new_value": angle,
         }
         self.new_scale = 100
+        
+        
+        self.step_history = []
+        self.last_pos = self.origin_xy
+        
+        self.rot_history = []
+        
 
         self.unpack_structure_dict(structure_dict)
 
-        self.dparams = {
-            "d": 0.125,
-            "time_per_step": 2,  # 2ns
-            "exp_disp": 1,  # 1 nm
-            "move_history": pd.DataFrame(columns=["x", "y", "angle"]),
-            "current_displacement": 0,  # current displacement value per step
-        }
+        # self.dparams = {
+        #     "d": 0.125,
+        #     "time_per_step": 2,  # 2ns
+        #     "exp_disp": 1,  # 1 nm
+        #     "move_history": pd.DataFrame(columns=["x", "y", "angle"]),
+        #     "current_displacement": 0,  # current displacement value per step
+        # }
 
         self.displacement = pd.DataFrame(
             columns=[
@@ -170,11 +185,14 @@ class PSIIStructure:
                 "mass",
                 "rotation_scalar",
                 "diffusion_scalar",
+                "x",
+                "y",
+                "theta"
             ]
         )
 
         self.body = self._create_body(mass=self.mass, angle=angle)
-
+        self.last_angle = self.body.angle
         shape_list, shape_str = self._create_shape_string(shape_type=shape_type)
         eval(shape_str)
 
@@ -240,6 +258,16 @@ class PSIIStructure:
             ),
         }
 
+    def unpack_structure_dict(self, structure_dict):
+        self.distance_threshold = structure_dict["distance_threshold"]
+        self.diffusion_scalar = structure_dict["diffusion_scalar"]
+        self.mass = structure_dict["mass"]
+        self.distance_scalar = structure_dict["distance_scalar"]
+        self.rotation_scalar = structure_dict["rotation_scalar"]
+        self.average_step_over = structure_dict["average_step_over"]
+        # self.calibrate_diff_d = structure_dict["calibrate_diff_d"]
+        # self.calibrate_rot_d = structure_dict["calibrate_rot_d"]
+
     def log_displacement(self):
         """Calculate the currend displacement from origin, and log to dataframe"""
         if self.active:
@@ -254,7 +282,7 @@ class PSIIStructure:
                 np.sqrt(np.power(x0 - x1, 2) + np.power(y0 - y1, 2)), 3
             )
 
-            time_ns = self.time_step * self.dparams["time_per_step"]
+            time_ns = self.time_step * self.time_per_step
             self.time_step += 1
 
             rot_from_start = self.body.angle - self.origin_angle
@@ -266,6 +294,9 @@ class PSIIStructure:
                 self.mass,
                 self.rotation_scalar,
                 self.diffusion_scalar,
+                self.body.position.x,
+                self.body.position.y,
+                self.body.angle,
             ]
 
             # if self.time_step % 100 == 0:
@@ -294,12 +325,7 @@ class PSIIStructure:
         else:
             self.displacement.to_csv(filename, mode="a", index=False, header=False)
 
-    def unpack_structure_dict(self, structure_dict):
-        self.distance_threshold = structure_dict["distance_threshold"]
-        self.diffusion_scalar = structure_dict["diffusion_scalar"]
-        self.mass = structure_dict["mass"]
-        self.distance_scalar = structure_dict["distance_scalar"]
-        self.rotation_scalar = structure_dict["rotation_scalar"]
+
 
     def get_distance_scalar(self, distance_scalar: str, threshold: float):
         if distance_scalar == "linear":
@@ -335,9 +361,26 @@ class PSIIStructure:
         t = (random.random() - 0.5) * 2 * np.pi * self.rotation_scalar
         self.body.angle += t
 
+    def log_step_distance(self, n: int = 10):
+        """ take the current position and compare distance traveled from
+        last position. Log in self.step_history """
+
+        v = self.vec_mag(self.last_pos, self.body.position)
+        self.step_history.append(v)
+
+        dtheta = np.abs(self.body.angle - self.last_angle)
+        self.rot_history.append(dtheta)
+
     def apply_vectors(self, attraction_enabled: bool = False) -> None:
 
         if self.active:
+            # calculate movement in this step and add to step_history
+            self.log_step_distance()
+
+            # save current position as last position
+            self.last_pos = self.body.position
+            self.last_angle = self.body.angle
+
             # log displacement from origin
             self.log_displacement()
 
@@ -366,6 +409,20 @@ class PSIIStructure:
                 # apply both vhat and thermal_movement
                 self.body.apply_impulse_at_local_point(vhat)
                 self.body.apply_impulse_at_local_point(thermal_movement)
+            
+            if self.time_step % self.average_step_over == 0:
+                # IF a step period is done, calibrate d for rotation and diffusion
+                self.diffusion_scalar, self.rotation_scalar = self.dcalibrator.calibrate_d(
+                    diffusion_scalar=self.diffusion_scalar, 
+                    rotation_scalar=self.rotation_scalar, 
+                    step_history=self.step_history, 
+                    rot_history=self.rot_history
+                )
+                
+ 
+
+
+
 
     def random_pos_in_structure(self, r: float = 1.0):
         """returns a random Vec2d with a radius of r  for impulse application direction"""
@@ -535,3 +592,10 @@ class PSIIStructure:
         if body_velocity_length > MAX_V:
             scale = MAX_V / body_velocity_length
             body.velocity = body.velocity * scale
+
+        
+        
+
+    
+    
+    

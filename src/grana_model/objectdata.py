@@ -64,51 +64,6 @@ class ObjectData:
         with open(f"{self.res_path}shapes/{obj_type}.pickle", "rb") as f:
             return pickle.load(f)
 
-    # def generate_secondary_object_list(
-    #     self,
-    #     type_dict: dict[Any, Any],
-    #     spawn_seed=0,
-    # ) -> Iterator[Any]:
-    #     '''
-    #     Generates a list of dicts, each containing the data needed to create a
-    #     PSII secondary structure, in this format:
-    #     {
-    #     "obj_type": str,  # ex. "C2S2M2"
-    #     "pos_xy": list,  # [x, y] coordinates
-    #     "angle": float, # angle in radians
-    #     "sprite": ImageData object, a spirte for the object type
-    #     "color": (0,0,0,255) RGBA color tuple
-    #     "shapes_simple": simple shape coordinate list
-    #     "shapes_compound": list of shape coordinate pairs, one for each of the
-    #     various compound shapes that are needed to create the PSII structure
-    #     }
-    #     The list will be an iterator object that you can use the next() function
-    #      on to get the next item
-    #     '''
-    #     obj_list = []
-
-    #     for num in  in zip(pos_list, obj_types):
-    #         obj_entry = {
-    #             "obj_type": obj_type,
-    #             "pos": pos,
-    #             "angle": (2 * pi * random()),
-    #             "sprite": type_dict[obj_type]["sprite"],
-    #             "color": type_dict[obj_type]["color"],
-    #             "shapes_simple": type_dict[obj_type]["shapes_simple"],
-    #             "shapes_compound": type_dict[obj_type]["shapes_compound"],
-    #         }
-
-    #         obj_list.append(obj_entry)
-
-    #     return iter(obj_list)
-
-    # def convert_shape_csv_to_shape_list(self, obj_dict):
-    # ''' used to turn csv files into a list of shape lists'''
-    #     return [
-    #         pd.read_csv(file).values.tolist()
-    #         for file in obj_dict["shapes_simple"]
-    #     ]
-
     def __generate_object_list(self, spawn_seed=0,) -> Iterator[Any]:
         """
         Generates a list of dicts, each containing the data needed to create a
