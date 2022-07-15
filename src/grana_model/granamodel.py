@@ -21,6 +21,7 @@ SIM_HEIGHT = 500
 # attraction_factor: scalar for the attraction points vectors
 #
 
+
 def main():
     my_space = configure_space(
         threaded=True,
@@ -62,7 +63,7 @@ def main():
         space=my_space,
         spawner=my_spawner,
         timer=SimulationTimer(),
-        draw_shapes=False,
+        draw_shapes=True,
     )
 
     # fps_display = pyglet.window.FPSDisplay(window=window)

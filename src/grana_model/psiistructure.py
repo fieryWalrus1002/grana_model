@@ -371,8 +371,7 @@ class PSIIStructure:
         dtheta = np.abs(self.body.angle - self.last_angle)
         self.rot_history.append(dtheta)
 
-    def apply_vectors(self, attraction_enabled: bool = False) -> None:
-
+    def apply_vectors(self, attraction_enabled: bool = False, thermove_enabled: bool = False) -> None:
         if self.active:
             # calculate movement in this step and add to step_history
             self.log_step_distance()
@@ -384,15 +383,16 @@ class PSIIStructure:
             # log displacement from origin
             self.log_displacement()
 
-            if attraction_enabled == False:
-                # calculate thermal movement and apply it only
+            # initialize vectors
+            if thermove_enabled:
+                # generate thermal movement vectors
                 thermal_movement = self.get_thermal_movement(
-                    radius=self.diffusion_scalar
-                )
-                self.body.apply_impulse_at_local_point(thermal_movement)
-
+                    radius=self.diffusion_scalar)
             else:
-                # get sum of all vectors in vector_list
+                thermal_movement = Vec2d(0, 0)
+            
+            if attraction_enabled:
+                # get sum of all attraction vectors in vector_list
                 vec_sum = Vec2d(0, 0)
 
                 for v in self.vector_list:
@@ -400,30 +400,23 @@ class PSIIStructure:
 
                 # create unit vector of vec_sum
                 vhat, _ = self.vec_norm(vec_sum, Vec2d(0, 0))
+            else: 
+                vhat = Vec2d(0, 0)
 
-                # calculate thermal movement
-                thermal_movement = self.get_thermal_movement(
-                    radius=self.diffusion_scalar
-                )
+            # apply both vhat and thermal_movement
+            self.body.apply_impulse_at_local_point(vhat)            
+            self.body.apply_impulse_at_local_point(thermal_movement)
 
-                # apply both vhat and thermal_movement
-                self.body.apply_impulse_at_local_point(vhat)
-                self.body.apply_impulse_at_local_point(thermal_movement)
-            
-            if self.time_step % self.average_step_over == 0:
-                # IF a step period is done, calibrate d for rotation and diffusion
+            # IF a step period is done, calibrate d for rotation and diffusion
+            if self.time_step % self.average_step_over == 0:    
                 self.diffusion_scalar, self.rotation_scalar = self.dcalibrator.calibrate_d(
                     diffusion_scalar=self.diffusion_scalar, 
                     rotation_scalar=self.rotation_scalar, 
                     step_history=self.step_history, 
                     rot_history=self.rot_history
                 )
+            
                 
- 
-
-
-
-
     def random_pos_in_structure(self, r: float = 1.0):
         """returns a random Vec2d with a radius of r  for impulse application direction"""
         return Vec2d((random.random() - 0.5) * r, (random.random() - 0.5) * r)

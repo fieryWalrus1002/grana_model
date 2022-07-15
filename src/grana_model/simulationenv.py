@@ -46,50 +46,43 @@ class SimulationEnvironment:
         self.dt = dt
         self.space.damping = damping
         self.attraction_point_coords = []
-        self.attraction_handler.enabled = (
-            False  # false for only brownian motion, not attraction forces
-        )
 
     def check_for_active(self):
-        """ Search through all objects, and return FALSE if any have active==False"""
+        """Search through all objects, and return FALSE if any have active==False"""
 
         object_status = [o.active for o in self.obstacle_list]
-        
+
         if False in object_status:
             return False
         else:
             return True
 
     def run(self):
-        """ creates the obstacles and begins running the simulation"""
+        """creates the obstacles and begins running the simulation"""
         self.obstacle_list, self.particle_list, _ = self.spawner.setup_model()
 
         while self.check_for_active():
             self.step()
 
-
     def step(self):
-        # zero all vectors
-        self.attraction_handler.reset_vectors_for_all_objects(self.obstacle_list)
 
-        # tell all LHCII to update their attraction vectors for this next step
-        self.attraction_handler.calculate_attraction_forces(self.obstacle_list)
+        if self.attraction_handler.active:
+            # zero all vectors
+            self.attraction_handler.reset_vectors_for_all_objects(self.obstacle_list)
 
-        # apply all vectors to each LHCII particle, if attraction_handler.enabled is True. Else, just do thermal movement and rotation.
-        self.attraction_handler.apply_all_vectors(
-            self.obstacle_list, attraction_enabled=self.attraction_handler.enabled
-        )
+            # tell all LHCII to update their attraction vectors for this next step
+            self.attraction_handler.calculate_attraction_forces(self.obstacle_list)
+
+            # apply all vectors to each LHCII particle
+            self.attraction_handler.apply_all_vectors(self.obstacle_list)
 
         # update simulation one step
         self.space.step(self.dt)
 
-        # get a list of attraction point coordinates to draw during on_draw() call
-        self.attraction_point_coords = self.attraction_handler.get_points_to_draw(
-            self.obstacle_list
-        )
+        # # get a list of attraction point coordinates to draw during on_draw() call
+        # self.attraction_point_coords = self.attraction_handler.get_points_to_draw(
+        #     self.obstacle_list
+        # )
 
-        
-
-    
     def fight(self):
         return "we fight now"

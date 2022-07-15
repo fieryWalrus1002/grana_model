@@ -1,4 +1,4 @@
-from particle import Particle
+from src.grana_model.particle import Particle
 import itertools
 import numpy as np
 from sklearn.utils.extmath import cartesian

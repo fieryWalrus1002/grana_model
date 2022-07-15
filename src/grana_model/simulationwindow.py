@@ -7,8 +7,8 @@ from math import sqrt
 from math import pi
 import pymunk
 import pymunk.pyglet_util
-from densityhandler import DensityHandler
-from diffusionhandler import LHCIIAttractionHandler
+from src.grana_model.densityhandler import DensityHandler
+from src.grana_model.diffusionhandler import LHCIIAttractionHandler
 from pymunk.space_debug_draw_options import SpaceDebugColor
 import time
 
