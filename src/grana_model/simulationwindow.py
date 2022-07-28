@@ -7,50 +7,24 @@ from math import sqrt
 from math import pi
 import pymunk
 import pymunk.pyglet_util
-from src.grana_model.densityhandler import DensityHandler
-from src.grana_model.diffusionhandler import LHCIIAttractionHandler
-from pymunk.space_debug_draw_options import SpaceDebugColor
-import time
-
-
-out_color = (
-    250,
-    0,
-    0,
-    50,
-)
-in_color = (0, 51, 0, 255)  # usual LHCII color
 
 
 class SimulationWindow(pyglet.window.Window):
     def __init__(
         self,
         window_offset,
-        space,
-        spawner,
         timer,
         draw_shapes,
+        env,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        self.env = env
         self.draw_shapes = draw_shapes
         self.timer = timer
-        self.spawner = spawner
-        self.space = space
         self.sensor = None
         self.batch = pyglet.graphics.Batch()
-        self.collision_handler = self.create_sensor_collision_handler()
-        self.attractionhandler = LHCIIAttractionHandler()
-        self.densityhandler = DensityHandler(
-            space=self.space,
-            x=200,
-            y=200,
-            width=100,
-            height=100,
-            in_color=in_color,
-            out_color=out_color,
-        )
 
         self.fps_display = pyglet.window.FPSDisplay(window=self)
 
@@ -81,30 +55,14 @@ class SimulationWindow(pyglet.window.Window):
             0.0  # holds the current radius selected for exporting a subset of objects
         )
 
-        self.attraction_point_coords = []
-
-        self.initialze_simulation()
+        # zoom in to the ensemble area
+        self.zoom_to_center()
 
     def configure_draw_options(self):
         self.draw_options = pymunk.pyglet_util.DrawOptions()
         self.draw_options.collision_point_color = (10, 20, 30, 0)
         self.draw_options.constraint_color = (0, 0, 0, 0)
         self.draw_options.flags = self.draw_options.DRAW_SHAPES
-
-    def initialze_simulation(self):
-        # start the simulation by instantiating the objects
-        self.zoom_to_center()
-
-        (self.obstacle_list, self.particle_list, _) = self.spawner.setup_model()
-        # self.sensor = self.densityhandler.create_ensemble_area_sensor()
-
-        # for o in self.obstacle_list:
-        #     for s in o.shape_list:
-        #         s.color = out_color
-
-        boundaries = self.densityhandler.spawn_boundaries()
-        for b in boundaries:
-            b.color = (0, 0, 0, 0)
 
     def get_nm_coordinates(self, pyg_pos: tuple[float, float]):
 
@@ -144,21 +102,12 @@ class SimulationWindow(pyglet.window.Window):
 
     def shape_exchange(self):
         """exchange all simple shapes for complex shapes"""
-        for o in self.obstacle_list:
+        for o in self.env.obstacle_list:
             o.exchange_simple_for_complex()
 
     def on_key_press(self, symbol, modifiers):
         if symbol == key.A:
-            # calculate the area within the ensemble boundaries
-            internal_area, total_area = self.densityhandler.update_area_calculations(
-                self.obstacle_list
-            )
-            ensemble_area = self.densityhandler.ensemble_area
-
-            print(
-                f"ensemble density = {round(internal_area / (ensemble_area), 2)}, interior_shape_area: {internal_area}, total_shape_area: {total_area}, ensemble_area: {ensemble_area}"
-            )
-
+            self.env.get_ensemble_area()
         if symbol == key.B:
             # activate shape exchange
             self.shape_exchange()
@@ -172,7 +121,7 @@ class SimulationWindow(pyglet.window.Window):
             self.diffusion_handler.toggle_diffusion_state()
         if symbol == key.E:
             # export the coordinates for all objects in the obstacle list
-            self.export_coordinates(ob_list=self.obstacle_list)
+            self.export_coordinates(ob_list=self.env.obstacle_list)
         if symbol == key.I:
             self.window_move(axis=1, dist=-20)
             # glTranslatef(0, -20, 0)
@@ -189,10 +138,10 @@ class SimulationWindow(pyglet.window.Window):
             # export coordinates for only selected shapes
             self.export_subset()
         if symbol == key.S:
-            # self.sprite_handler.toggle_debug_draw()
+            self.sprite_handler.toggle_debug_draw()
             pass
         if symbol == key.V:
-            self.attractionhandler.toggle_attraction_forces()
+            self.env.attractionhandler.toggle_attraction_forces()
         if symbol == key.W:
             self.query_shapes_in_section()
         if symbol == key.X:
@@ -213,10 +162,10 @@ class SimulationWindow(pyglet.window.Window):
     def query_shapes_in_section(self):
 
         num_objects, objects_list = self.get_shapes_in_rectangle(
-            self.densityhandler.x,
-            self.densityhandler.y,
-            self.densityhandler.width,
-            self.densityhandler.height,
+            self.env.densityhandler.x,
+            self.env.densityhandler.y,
+            self.env.densityhandler.width,
+            self.env.densityhandler.height,
         )
 
         # self.densityhandler.print_shapes_in_section(objects_list)
@@ -279,7 +228,7 @@ class SimulationWindow(pyglet.window.Window):
     def find_objects_in_zone(self, origin, radius):
         x, y = origin
         sel_obj = []
-        for obstacle in self.obstacle_list:
+        for obstacle in self.env.obstacle_list:
             x1, y1 = obstacle.body.position
 
             # calculate distance from given point
@@ -306,7 +255,7 @@ class SimulationWindow(pyglet.window.Window):
         num_objects = 0
         objects_list = []
 
-        for o in self.obstacle_list:
+        for o in self.env.obstacle_list:
             x1, y1 = o.body.position
 
             if x < x1 < x + width and y < y1 < y + height:
@@ -329,7 +278,7 @@ class SimulationWindow(pyglet.window.Window):
     #     for j, s in enumerate(obstacle.shape_list):
 
     #         # reindex shape
-    #         self.space.reindex_shape(s)
+    #         self.env.space.reindex_shape(s)
 
     #         # get transform for shape attached to body
     #         x1, y1 = s.center_of_gravity
@@ -349,48 +298,9 @@ class SimulationWindow(pyglet.window.Window):
     #         else:
     #             s.color = in_color
 
-    def create_sensor_collision_handler(self):
-        h = self.space.add_collision_handler(1, 3)  # structure against boundary
-        h.begin = self.bound_coll_begin
-        h.separate = self.bound_coll_separate
-
-        return h
-
-    def bound_coll_begin(self, arbiter, space, data):
-        arbiter.shapes[0].color = out_color
-        return True
-
-    def bound_coll_separate(self, arbiter, space, data):
-        # if the shape separates from the boundary, and it is within the ensemble area,
-        # add its area back to the internal_area calculation
-        arbiter.shapes[0].color = in_color
-
-        # s = arbiter.shapes[0]
-        # x, y = s.center_of_gravity
-
-        # if 200 < x < 300 and 200 < y < 300:
-        return True
-
     def update(self, dt):
-    
-        # zero all vectors
-        self.attractionhandler.reset_vectors_for_all_objects(self.obstacle_list)
-
-        # tell all LHCII to update their attraction vectors for this next step
-        self.attractionhandler.calculate_attraction_forces(self.obstacle_list)
-
-        # apply all vectors to each LHCII particle, if attractionhandler.enabled is True. Else, just do thermal movement and rotation.
-        self.attractionhandler.apply_all_vectors(self.obstacle_list, attraction_enabled = self.attractionhandler.enabled)
-
-        # update simulation one step
-        self.space.step(dt)
-
-        # get a list of attraction point coordinates to draw during on_draw() call
-        self.attraction_point_coords = self.attractionhandler.get_points_to_draw(
-            self.obstacle_list
-        )
-
-
+        # # update simulation one step
+        self.env.step()
 
     def on_draw(self):
         self.clear()
@@ -398,14 +308,14 @@ class SimulationWindow(pyglet.window.Window):
         self.fps_display.draw()
 
         if self.draw_shapes:
-            self.space.debug_draw(self.draw_options)
+            self.env.space.debug_draw(self.draw_options)
 
             # list comprehension to draw all the attraction points
             yay_dots = [
                 pyglet.shapes.Circle(
                     dot[0], dot[1], radius=0.25, color=(250, 250, 230), batch=self.batch
                 )
-                for dot in self.attraction_point_coords
+                for dot in self.env.attraction_point_coords
             ]
 
             self.batch.draw()

@@ -3,6 +3,16 @@ from math import pi
 from pyglet.shapes import Circle, Rectangle
 import pymunk
 
+# colors for objects in sim window
+out_color = (
+    250,
+    0,
+    0,
+    50,
+)
+in_color = (0, 51, 0, 255)  # usual LHCII color
+
+
 class DensityHandler:
     def __init__(
         self,
@@ -11,8 +21,6 @@ class DensityHandler:
         y: float = 150.0,
         width: int = 100,
         height: int = 100,
-        in_color: tuple = (0, 0, 0, 0),
-        out_color: tuple = (0, 0, 0, 0)
     ):
         self.space = space
         self.num_objects = 0
