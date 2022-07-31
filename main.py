@@ -54,12 +54,14 @@ def main(gui: bool = False):
         # 1: spawn_type="psii_only",
         # 2: spawn_type="full",
         # 3: LHCII only
-        shape_type="simple",
+        # shape_type="circle_large",
+        shape_type="circle_small",
+        circle_radius=0.1,
         space=space,
         batch=batch,
         num_particles=0,
         num_psii=0,
-        num_lhcii=100,
+        num_lhcii=69,
         section=(
             200,
             200,

@@ -108,9 +108,8 @@ class SimulationEnvironment:
         )
         ensemble_area = self.densityhandler.ensemble_area
 
-        print(
-            f"ensemble density = {round(internal_area / (ensemble_area), 2)}, interior_shape_area: {internal_area}, total_shape_area: {total_area}, ensemble_area: {ensemble_area}"
-        )
+        return {"internal_area": internal_area, "total_area": total_area, "ensemble_area": ensemble_area}
+        
     
     
     def create_sensor_collision_handler(self):

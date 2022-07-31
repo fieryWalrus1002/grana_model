@@ -159,14 +159,14 @@ class SimulationWindow(pyglet.window.Window):
         if symbol == key.BRACKETRIGHT:
             self.sprite_handler.change_rotation_factor(value=0.1)
 
-    def query_shapes_in_section(self):
+    # def query_shapes_in_section(self):
 
-        num_objects, objects_list = self.get_shapes_in_rectangle(
-            self.env.densityhandler.x,
-            self.env.densityhandler.y,
-            self.env.densityhandler.width,
-            self.env.densityhandler.height,
-        )
+    #     num_objects, objects_list = self.get_shapes_in_rectangle(
+    #         self.env.densityhandler.x,
+    #         self.env.densityhandler.y,
+    #         self.env.densityhandler.width,
+    #         self.env.densityhandler.height,
+    #     )
 
         # self.densityhandler.print_shapes_in_section(objects_list)
 
@@ -302,6 +302,8 @@ class SimulationWindow(pyglet.window.Window):
         # # update simulation one step
         self.env.step()
 
+        
+
     def on_draw(self):
         self.clear()
 
@@ -319,3 +321,9 @@ class SimulationWindow(pyglet.window.Window):
             ]
 
             self.batch.draw()
+        
+        # calculate the ensemble area
+        area_dict = self.env.get_ensemble_area()
+        print(
+            f'ensemble density = {round(area_dict["internal_area"] / (area_dict["ensemble_area"]), 2)}, interior_shape_area: {area_dict["internal_area"]}, total_shape_area: {area_dict["total_area"]}, ensemble_area: {area_dict["ensemble_area"]}'
+        )

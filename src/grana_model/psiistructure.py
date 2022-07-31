@@ -1,7 +1,7 @@
 import pyglet
 from math import degrees, sqrt
 import random
-from pymunk import Vec2d, Body, moment_for_circle, Poly, Space
+from pymunk import Vec2d, Body, moment_for_circle, Poly, Space, Circle
 import os
 from pathlib import Path
 from math import cos, sin, pi
@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 import csv
 import datetime
+
+from pyparsing import col
 from .dcalibrator import DCalibrator
 
 
@@ -131,8 +133,10 @@ class PSIIStructure:
         angle: float,
         structure_dict: dict,
         use_sprites: bool = True,
+        circle_radius: int = 3, # size of shape circle
     ):
         self.active = True
+        self.circle_radius = circle_radius
         self.id_num = random.randint(1000, 9999)
         self.structure_dict = structure_dict
         self.vector_list = (
@@ -147,7 +151,6 @@ class PSIIStructure:
         self.origin_angle = angle
         self.time_step = 0
         self.current_xy = pos
-
         self.time_per_step = structure_dict["time_per_step"]
         
         self.dcalibrator = DCalibrator(structure_dict)      
@@ -543,19 +546,58 @@ class PSIIStructure:
         an argument to eval(), will create all the compound or simple
         shapes needed to define complex structures and
         add them to the space along with self.body"""
-
+    
+        
         if shape_type == "simple":
-            coord_list = self.obj_dict["shapes_simple"]
-        else:
+            coord_list = self.obj_dict["shapes_simple"]        
+
+            shape_list = [
+               self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list
+            ]
+
+        if shape_type == "circle":
+            circle = Circle(self.body, radius=self.circle_radius)
+            circle.color = self.obj_dict["color"]
+            circle.friction = 0.5
+            circle.elasticity = 0.0
+            circle.collision_type = 1
+
+            shape_list = [circle]
+        
+        if shape_type == "complex":
             coord_list = self.obj_dict["shapes_compound"]
-        shape_list = [
-            self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list
-        ]
+            
+            shape_list = [
+               self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list
+            ]
+
+        if shape_type == "circle_small":
+            shape_coord = self.get_circle_coords_from_csv("LHCII_3p75.csv")
+            my_shape = Poly(self.body, vertices=shape_coord)
+            my_shape.color = self.obj_dict["color"]
+            my_shape.friction = 0.5
+            my_shape.elasticity = 0.0
+            my_shape.collision_type = 1
+            shape_list = [my_shape]
+
+        if shape_type == "circle_large":
+            shape_coord = self.get_circle_coords_from_csv("LHCII_4p5.csv")           
+            my_shape = Poly(self.body, vertices=shape_coord)
+            my_shape.color = self.obj_dict["color"]
+            my_shape.friction = 0.5
+            my_shape.elasticity = 0.0
+            my_shape.collision_type = 1
+            shape_list = [my_shape]
 
         return (
             shape_list,
             f"space.add(self.body, {','.join([str(f'shape_list[{i}]') for i, shape in enumerate(shape_list)])})",
         )
+
+    def get_circle_coords_from_csv(self, filename):
+        df = pd.read_csv(f"src/grana_model/res/shapes/{filename}")
+        
+        return df.values.tolist()
 
     def _create_shape(self, shape_coord: tuple):
         """creates a shape"""

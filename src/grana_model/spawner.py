@@ -24,9 +24,12 @@ class Spawner:
         num_lhcii: int = 0,
         use_sprites: bool = True,
         section: tuple = (100, 100, 100, 100),  # x, y, width, height
+        circle_radius: int = 1 # if using shape_type = "circle", this is the circle radius
     
     ):
+     
         self.structure_dict = structure_dict
+        self.circle_radius = circle_radius
         self.object_data = object_data
         self.num_psii = num_psii
         self.num_particles = num_particles
@@ -158,7 +161,8 @@ class Spawner:
                     pos=self.random_pos_in_circle(),
                     angle=self.random_angle(),
                     use_sprites=self.use_sprites,
-                    structure_dict = self.structure_dict["LHCII"]
+                    structure_dict = self.structure_dict["LHCII"],
+                    circle_radius  = self.circle_radius
                 )
                 for _ in range(0, int(self.ratio_free_LHC * self.num_psii))
             ]
