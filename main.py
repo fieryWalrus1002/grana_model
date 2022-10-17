@@ -6,23 +6,17 @@ from src.grana_model.objectdata import ObjectData
 from src.grana_model.densityhandler import DensityHandler
 import pymunk
 import pyglet
+from itertools import product
 
 REPS = 1
 
 # constants for sim window, if gui == True
-GUI_STATE = True
+GUI_STATE = False
 SIM_WIDTH = 500
 SIM_HEIGHT = 500
-
-
-"""
-TODO:
-
-- work on the variable size circle model, "circle is isotropic"
-- speak again in two weeks
-- 
-
-"""
+SHAPE_COMBOS = [
+    f"lhcii_circle_{r}_{n}" for (r, n) in product([3.75, 4.5], [6, 20, 50, 80])
+]
 
 
 def configure_space(threaded: bool = False, damping: float = 0.1):
@@ -31,7 +25,7 @@ def configure_space(threaded: bool = False, damping: float = 0.1):
     return space
 
 
-def main(gui: bool = False):
+def main(gui: bool = False, shape_type: str = "simple"):
     attraction_handler = AttractionHandler(
         thermove_enabled=False, attraction_enabled=False
     )
@@ -55,13 +49,13 @@ def main(gui: bool = False):
         # 2: spawn_type="full",
         # 3: LHCII only
         # shape_type="circle_large",
-        shape_type="circle_small",
+        shape_type=shape_type,
         circle_radius=0.1,
         space=space,
         batch=batch,
         num_particles=0,
         num_psii=0,
-        num_lhcii=69,
+        num_lhcii=200,
         section=(
             200,
             200,
@@ -93,6 +87,7 @@ def main(gui: bool = False):
         object_data=object_data,
         attraction_handler=attraction_handler,
         densityhandler=densityhandler,
+        gui = gui,
     )
 
     if gui:
@@ -108,6 +103,7 @@ def main(gui: bool = False):
 
         # fps_display = pyglet.window.FPSDisplay(window=window)
         pyglet.clock.schedule_interval(window.update, 1.0 / 60.0)
+        print('run app')
         pyglet.app.run()
         print("app done")
         window.close()
@@ -118,13 +114,15 @@ def main(gui: bool = False):
 
 
 if __name__ == "__main__":
+    
 
     if GUI_STATE == False:
         # no window, just sim environment
-        for i in range(0, REPS):
-            # run the sim a given number of reps
-            print(f"run {i}/{REPS}")
-            main(gui=GUI_STATE)
+        for i in range(REPS):
+            for j in SHAPE_COMBOS:
+                print(f"starting {j}, rep {i}")
+                main(gui=False, shape_type=j)
+            
     else:
         # if GUI_STATE == True, run it once with a window
         main(gui=GUI_STATE)

@@ -35,6 +35,7 @@ class SimulationEnvironment:
         densityhandler,
         dt: float = 0.01666667,
         damping: float = 0.1,
+        gui: bool = False,
     ):
         # simulation components
         self.space = space
@@ -45,7 +46,9 @@ class SimulationEnvironment:
         self.object_data = object_data
         self.obstacle_list, self.particle_list, _ = self.spawner.setup_model()
         self.sensor = self.densityhandler.create_ensemble_area_sensor()
-        self.boundaries  = self.densityhandler.spawn_boundaries()
+        self.boundaries = self.densityhandler.spawn_boundaries()
+        self.gui = gui
+        self.steps = 0
 
         # simulation variables
         self.active = True
@@ -67,18 +70,19 @@ class SimulationEnvironment:
         for o in self.obstacle_list:
             for s in o.shape_list:
                 s.color = self.out_color
-        
+
         for b in self.boundaries:
             b.color = (0, 0, 0, 0)
 
     def run(self):
         """creates the obstacles and begins running the simulation"""
         self.obstacle_list, self.particle_list, _ = self.spawner.setup_model()
-
+        print("starting simulation")
         while self.check_for_active():
             self.step()
 
     def step(self):
+        self.steps += 1
 
         if self.attraction_handler.active:
             # zero all vectors
@@ -93,10 +97,14 @@ class SimulationEnvironment:
         # update simulation one step
         self.space.step(self.dt)
 
-        # # get a list of attraction point coordinates to draw during on_draw() call
-        self.attraction_point_coords = self.attraction_handler.get_points_to_draw(
-            self.obstacle_list
-        )
+        if self.steps % 2 == 0:
+            print("step: ", self.steps)
+
+        if self.gui:
+            # # get a list of attraction point coordinates to draw during on_draw() call
+            self.attraction_point_coords = self.attraction_handler.get_points_to_draw(
+                self.obstacle_list
+            )
 
     def fight(self):
         return "we fight now"
@@ -108,10 +116,12 @@ class SimulationEnvironment:
         )
         ensemble_area = self.densityhandler.ensemble_area
 
-        return {"internal_area": internal_area, "total_area": total_area, "ensemble_area": ensemble_area}
-        
-    
-    
+        return {
+            "internal_area": internal_area,
+            "total_area": total_area,
+            "ensemble_area": ensemble_area,
+        }
+
     def create_sensor_collision_handler(self):
         h = self.space.add_collision_handler(1, 3)  # structure against boundary
         h.begin = self.bound_coll_begin
@@ -133,4 +143,3 @@ class SimulationEnvironment:
 
         # if 200 < x < 300 and 200 < y < 300:
         return True
-

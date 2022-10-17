@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+from multiprocessing.sharedctypes import Value
 import pyglet
 from math import degrees, sqrt
 import random
@@ -120,7 +122,6 @@ class AttractionPoint:
 
         # print(f'vm: {vm}, vhat: {v_hat}, vmag: {v_mag}, v3: {v3}')
         return Vec2d(v3[0], v3[1])
-
 
 class PSIIStructure:
     def __init__(
@@ -541,64 +542,24 @@ class PSIIStructure:
         self.sprite.color = spr_color
         self.sprite.rotation = degrees(-self.body.angle)
 
-    def _create_shape_string(self, shape_type: str):
-        """create a shape_string that when provided as
-        an argument to eval(), will create all the compound or simple
-        shapes needed to define complex structures and
-        add them to the space along with self.body"""
-    
+    def create_shape_list(self, shape_type):
+        """creates pymunk shape objects, given a shape type and a shape coordinate. return slist of shapes"""
         
         if shape_type == "simple":
             coord_list = self.obj_dict["shapes_simple"]        
-
-            shape_list = [
-               self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list
-            ]
-
-        if shape_type == "circle":
-            circle = Circle(self.body, radius=self.circle_radius)
-            circle.color = self.obj_dict["color"]
-            circle.friction = 0.5
-            circle.elasticity = 0.0
-            circle.collision_type = 1
-
-            shape_list = [circle]
-        
-        if shape_type == "complex":
+        elif shape_type == "complex":
             coord_list = self.obj_dict["shapes_compound"]
-            
-            shape_list = [
-               self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list
-            ]
+        else:
+            try:
+                structure, _, r, n = shape_type.split("_")
+                filename = f"{structure}_circle_r_{r}_n_{n}_coords.csv"
+                coord_list = [self.get_circle_coords_from_csv(filename=filename)]
+            except ValueError:
+                print("shape type not recognized")
+                raise ValueError          
 
-        if shape_type == "circle_small":
-            shape_coord = self.get_circle_coords_from_csv("LHCII_3p75.csv")
-            my_shape = Poly(self.body, vertices=shape_coord)
-            my_shape.color = self.obj_dict["color"]
-            my_shape.friction = 0.5
-            my_shape.elasticity = 0.0
-            my_shape.collision_type = 1
-            shape_list = [my_shape]
-
-        if shape_type == "circle_large":
-            shape_coord = self.get_circle_coords_from_csv("LHCII_4p5.csv")           
-            my_shape = Poly(self.body, vertices=shape_coord)
-            my_shape.color = self.obj_dict["color"]
-            my_shape.friction = 0.5
-            my_shape.elasticity = 0.0
-            my_shape.collision_type = 1
-            shape_list = [my_shape]
-
-        return (
-            shape_list,
-            f"space.add(self.body, {','.join([str(f'shape_list[{i}]') for i, shape in enumerate(shape_list)])})",
-        )
-
-    def get_circle_coords_from_csv(self, filename):
-        df = pd.read_csv(f"src/grana_model/res/shapes/{filename}")
+        return [self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list]
         
-        return df.values.tolist()
-
     def _create_shape(self, shape_coord: tuple):
         """creates a shape"""
         my_shape = Poly(self.body, vertices=shape_coord)
@@ -609,6 +570,24 @@ class PSIIStructure:
         my_shape.collision_type = 1
 
         return my_shape
+
+    def _create_shape_string(self, shape_type: str):
+        """create a shape_string that when provided as
+        an argument to eval(), will create all the compound or simple
+        shapes needed to define complex structures and
+        add them to the space along with self.body"""
+    
+        shape_list = self.create_shape_list(shape_type)
+
+        return (
+            shape_list,
+            f"space.add(self.body, {','.join([str(f'shape_list[{i}]') for i, shape in enumerate(shape_list)])})",
+        )
+
+    def get_circle_coords_from_csv(self, filename):
+        df = pd.read_csv(f"src/grana_model/res/shapes/{filename}")
+        
+        return df.values.tolist()
 
     def update_sprite(self, sprite_scale_factor, rotation_factor):
         self.sprite.rotation = degrees(-self.body.angle) + rotation_factor
