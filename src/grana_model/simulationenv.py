@@ -21,6 +21,8 @@ Todo:
 """
 import pymunk
 import time
+from datetime import datetime
+import csv
 
 
 class SimulationEnvironment:
@@ -33,6 +35,7 @@ class SimulationEnvironment:
         object_data,
         attraction_handler,
         densityhandler,
+        step_limit: int,
         dt: float = 0.01666667,
         damping: float = 0.1,
         gui: bool = False,
@@ -55,6 +58,7 @@ class SimulationEnvironment:
         self.dt = dt
         self.space.damping = damping
         self.attraction_point_coords = []
+        self.step_limit = step_limit
 
     def check_for_active(self):
         """Search through all objects, and return FALSE if any have active==False"""
@@ -78,7 +82,7 @@ class SimulationEnvironment:
         """creates the obstacles and begins running the simulation"""
         self.obstacle_list, self.particle_list, _ = self.spawner.setup_model()
         print("starting simulation")
-        while self.check_for_active():
+        while self.active:
             self.step()
 
     def step(self):
@@ -97,7 +101,9 @@ class SimulationEnvironment:
         # update simulation one step
         self.space.step(self.dt)
 
-        if self.steps % 2 == 0:
+        self.active = self.check_for_active()
+
+        if self.steps % 20 == 0:
             print("step: ", self.steps)
 
         if self.gui:
@@ -105,6 +111,15 @@ class SimulationEnvironment:
             self.attraction_point_coords = self.attraction_handler.get_points_to_draw(
                 self.obstacle_list
             )
+        if self.steps > self.step_limit:
+            filename = (
+                f"lhcii_export_coords/{self.spawner.shape_type}_limit_{self.step_limit}_coords".replace(
+                    ".", "p"
+                )
+                + ".csv"
+            )
+            self.export_coordinates(self.obstacle_list, filename=filename)
+            self.active = False
 
     def fight(self):
         return "we fight now"
@@ -143,3 +158,24 @@ class SimulationEnvironment:
 
         # if 200 < x < 300 and 200 < y < 300:
         return True
+
+    def export_coordinates(self, ob_list, filename="coords.csv"):
+        now = datetime.now()
+        dt_string = now.strftime("%d%m%Y_%H%M")
+        print(filename + " has been exported.")
+
+        with open(filename, "w", newline="") as f:
+            write = csv.writer(f)
+            # write the headers
+            write.writerow(["type", "x", "y", "angle", "area"])
+
+            for obstacle in ob_list:
+                write.writerow(
+                    (
+                        obstacle.type,
+                        obstacle.body.position[0],
+                        obstacle.body.position[1],
+                        obstacle.body.angle,
+                        obstacle.area,
+                    )
+                )

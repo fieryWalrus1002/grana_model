@@ -15,8 +15,9 @@ GUI_STATE = False
 SIM_WIDTH = 500
 SIM_HEIGHT = 500
 SHAPE_COMBOS = [
-    f"lhcii_circle_{r}_{n}" for (r, n) in product([3.75, 4.5], [6, 20, 50, 80])
+    f"lhcii_circle_{r}_{n}" for (r, n) in product([3.75, 4.5], range(4, 100, 20))
 ]
+STEP_LIMIT = 10000
 
 
 def configure_space(threaded: bool = False, damping: float = 0.1):
@@ -25,7 +26,7 @@ def configure_space(threaded: bool = False, damping: float = 0.1):
     return space
 
 
-def main(gui: bool = False, shape_type: str = "simple"):
+def main(gui: bool = False, shape_type: str = "simple", step_limit: int = STEP_LIMIT):
     attraction_handler = AttractionHandler(
         thermove_enabled=False, attraction_enabled=False
     )
@@ -87,7 +88,8 @@ def main(gui: bool = False, shape_type: str = "simple"):
         object_data=object_data,
         attraction_handler=attraction_handler,
         densityhandler=densityhandler,
-        gui = gui,
+        gui=gui,
+        step_limit=step_limit,
     )
 
     if gui:
@@ -103,7 +105,7 @@ def main(gui: bool = False, shape_type: str = "simple"):
 
         # fps_display = pyglet.window.FPSDisplay(window=window)
         pyglet.clock.schedule_interval(window.update, 1.0 / 60.0)
-        print('run app')
+        print("run app")
         pyglet.app.run()
         print("app done")
         window.close()
@@ -114,15 +116,14 @@ def main(gui: bool = False, shape_type: str = "simple"):
 
 
 if __name__ == "__main__":
-    
 
     if GUI_STATE == False:
         # no window, just sim environment
         for i in range(REPS):
             for j in SHAPE_COMBOS:
                 print(f"starting {j}, rep {i}")
-                main(gui=False, shape_type=j)
-            
+                main(gui=False, shape_type=j, step_limit=STEP_LIMIT)
+
     else:
         # if GUI_STATE == True, run it once with a window
         main(gui=GUI_STATE)
