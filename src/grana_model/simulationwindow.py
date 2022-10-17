@@ -13,27 +13,19 @@ class SimulationWindow(pyglet.window.Window):
     def __init__(
         self,
         window_offset,
-        space,
-        spawner,
         timer,
-        scoreboard,
-        diffusion_handler,
-        sprite_handler,
-        collision_handler,
-        batch,
+        draw_shapes,
+        env,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        self.env = env
+        self.draw_shapes = draw_shapes
         self.timer = timer
-        self.spawner = spawner
-        self.space = space
-        self.batch = batch
-        self.scoreboard = scoreboard
-        self.diffusion_handler = diffusion_handler
-        self.sprite_handler = sprite_handler
-        self.options = pymunk.pyglet_util.DrawOptions()
-        self.collision_handler = collision_handler
+        self.sensor = None
+        self.batch = pyglet.graphics.Batch()
+
         self.fps_display = pyglet.window.FPSDisplay(window=self)
 
         self.set_location(window_offset[0], window_offset[1])
@@ -47,26 +39,31 @@ class SimulationWindow(pyglet.window.Window):
         self.scale_factor = (1.0, 1.0, 0.0)
         self.delta_pos = (0.0, 0.0, 0.0)
 
-        self.collision_list = (
-            []
-        )  # holds body objects that are currently colliding
+        self.collision_list = []  # holds body objects that are currently colliding
         self.sum_overlap_dist = 0.0
 
         self.selected_objects = []  # holds the current selected objects
-        self.selection_area = (
-            1.0  # hodls the current selection area in square nm
-        )
+        self.selection_area = 1.0  # hodls the current selection area in square nm
+
+        self.configure_draw_options()
 
         self.cursor_xy = (
             100.0,
             100.0,
         )  # holds the current selected coordinates for our object sublist.
-        self.sel_radius = 0.0  # holds the current radius selected for exporting a subset of objects
+        self.sel_radius = (
+            0.0  # holds the current radius selected for exporting a subset of objects
+        )
 
-        # start the simulation by instantiating the objects
-        self.obstacle_list, self.particle_list = self.spawner.setup_model()
+        # zoom in to the ensemble area
+        self.zoom_to_center()
 
-    # window.get_size():
+    def configure_draw_options(self):
+        self.draw_options = pymunk.pyglet_util.DrawOptions()
+        self.draw_options.collision_point_color = (10, 20, 30, 0)
+        self.draw_options.constraint_color = (0, 0, 0, 0)
+        self.draw_options.flags = self.draw_options.DRAW_SHAPES
+
     def get_nm_coordinates(self, pyg_pos: tuple[float, float]):
 
         # pyg_pos is the pyglet coordinates in the window
@@ -80,59 +77,6 @@ class SimulationWindow(pyglet.window.Window):
         y0 = (y1 / cur_window_height * self.window_height) - self.delta_pos[1]
 
         return (x0, y0)
-
-        # for point in arbiter.contact_point_set.points:
-        #     if point.distance < 0:
-        #         for shape in arbiter.shapes:
-        #             # add it to the collist list for scoring purposes
-        #             if shape.body not in self.collision_list:
-        #                 self.collision_list.append(shape.body
-        #         self.sum_overlap_dist += point.distance
-        #             # try a movement
-        #             self.body_adjustment(shape.body)
-
-    # def count_overlap_distance(self, col_list):
-
-    #     def get_distance(arb):
-    #         contact_points = []
-    #         cp_set = arb.contact_point_set
-    #         return cp_set
-
-    #     body_list = [shape.body for shape in col_list]
-    #     u_body_list = set(body_list)
-    #     print(f"body_list: {len(body_list)} vs unique body_list: {len(u_body_list)}")
-
-    #     # print(body_list)
-    #     sum_dist = 0
-
-    #     for body in u_body_list:
-    #         temp = body.each_arbiter(get_distance)
-    #         print(temp)
-
-    #     return sum_dist
-
-    # now take unique body list and get all arbiters dealing with them
-
-    # if arbiter.contact_point_set.point.distance
-    # contact_point_set = arbiter.contact_point_set
-    # colliding_objects = arbiter.shapes
-
-    # if contact_point_set.distance < 0:
-    #     print(f"{colliding_objects} overlap: {contact_point_set.distance}")
-
-    # for point in contact_point_set.points:
-    #     print(point.distance)
-
-    #     contact_point_set = arbiter.contact_point_set
-    #     for point in contact_point_set.points:
-    #         print(point.distance)
-    # colliding_objects = arbiter.shapes
-    # if contact_point_set.distance < 0:
-    #     print(f"{colliding_objects} overlap: {contact_point_set.distance}")
-    # print(f"contact_poinst_set is {contact_point_set}, shapes = {colliding_objects}")
-    # for object in colliding_objects:
-    #     if object not in self.collision_list:
-    #         self.collision_list.append(object)
 
     def export_coordinates(self, ob_list):
         now = datetime.now()
@@ -156,39 +100,56 @@ class SimulationWindow(pyglet.window.Window):
                     )
                 )
 
+    def shape_exchange(self):
+        """exchange all simple shapes for complex shapes"""
+        for o in self.env.obstacle_list:
+            o.exchange_simple_for_complex()
+
     def on_key_press(self, symbol, modifiers):
-        if symbol == key.D:
-            self.diffusion_handler.toggle_diffusion_state()
-        if symbol == key.S:
-            self.sprite_handler.toggle_debug_draw()
-        if symbol == key.E:
-            # export the coordinates for all objects in the obstacle list
-            self.export_coordinates(ob_list=self.obstacle_list)
+        if symbol == key.A:
+            self.env.get_ensemble_area()
+        if symbol == key.B:
+            # activate shape exchange
+            self.shape_exchange()
         if symbol == key.C:
             # center the grana in the screen and scale it up a bit
             self.set_size(self.window_width * 2, self.window_height * 2)
-            glTranslatef(
-                0.05 * self.window_width, 0.025 * self.window_height, 0
-            )
-            glScalef(2, 2, 0)
-        if symbol == key.Q:
-            self.export_subset()
-        if symbol == key.K:
-            self.window_move(axis=1, dist=20)
-            # glTranslatef(0, 20, 0)
+            glTranslatef(0.5 * self.window_width, 0.5 * self.window_height, 0)
+            glScalef(3, 3, 0)
+        if symbol == key.D:
+            # turn on or off the diffusion. currently not function.
+            self.diffusion_handler.toggle_diffusion_state()
+        if symbol == key.E:
+            # export the coordinates for all objects in the obstacle list
+            self.export_coordinates(ob_list=self.env.obstacle_list)
         if symbol == key.I:
             self.window_move(axis=1, dist=-20)
             # glTranslatef(0, -20, 0)
+        if symbol == key.K:
+            self.window_move(axis=1, dist=20)
+            # glTranslatef(0, 20, 0)
         if symbol == key.L:
             self.window_move(axis=0, dist=-20)
             # glTranslatef(-20, 0, 0)
         if symbol == key.J:
             self.window_move(axis=0, dist=20)
             # glTranslatef(20, 0, 0)
-        if symbol == key.Z:
-            glScalef(1.1, 1.1, 0)
+        if symbol == key.Q:
+            # export coordinates for only selected shapes
+            self.export_subset()
+        if symbol == key.S:
+            self.sprite_handler.toggle_debug_draw()
+            pass
+        if symbol == key.V:
+            self.env.attractionhandler.toggle_attraction_forces()
+        if symbol == key.W:
+            self.query_shapes_in_section()
         if symbol == key.X:
+            # zoom out
             glScalef(0.89, 0.89, 0)
+        if symbol == key.Z:
+            # zoom in
+            glScalef(1.1, 1.1, 0)
         if symbol == key.MINUS:
             self.sprite_handler.change_scale_factor(value=-0.0005)
         if symbol == key.EQUAL:
@@ -197,6 +158,17 @@ class SimulationWindow(pyglet.window.Window):
             self.sprite_handler.change_rotation_factor(value=-0.1)
         if symbol == key.BRACKETRIGHT:
             self.sprite_handler.change_rotation_factor(value=0.1)
+
+    # def query_shapes_in_section(self):
+
+    #     num_objects, objects_list = self.get_shapes_in_rectangle(
+    #         self.env.densityhandler.x,
+    #         self.env.densityhandler.y,
+    #         self.env.densityhandler.width,
+    #         self.env.densityhandler.height,
+    #     )
+
+        # self.densityhandler.print_shapes_in_section(objects_list)
 
     def window_move(self, axis: int, dist: int):
         if axis == 0:
@@ -242,8 +214,8 @@ class SimulationWindow(pyglet.window.Window):
             self.sel_radius = sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
             # calculate selection area
-            self.selection_area = pi * self.sel_radius ** 2
-
+            self.selection_area = pi * self.sel_radius**2
+            print(f"unadjusted coords: {x}, {y}")
             print(
                 f"coordinates {self.cursor_xy} selected as origin, radius = {self.sel_radius}, area = {self.selection_area}"
             )
@@ -256,7 +228,7 @@ class SimulationWindow(pyglet.window.Window):
     def find_objects_in_zone(self, origin, radius):
         x, y = origin
         sel_obj = []
-        for obstacle in self.obstacle_list:
+        for obstacle in self.env.obstacle_list:
             x1, y1 = obstacle.body.position
 
             # calculate distance from given point
@@ -272,80 +244,86 @@ class SimulationWindow(pyglet.window.Window):
     def get_arb_shapes(self, arb):
         return arb.shapes
 
+    def zoom_to_center(self):
+        self.set_size(self.window_width * 2, self.window_height * 2)
+
+        glScalef(5, 5, 0)
+
+        glTranslatef(self.window_width * -0.3, self.window_height * -0.3, 0)
+
+    def get_shapes_in_rectangle(self, x, y, width, height):
+        num_objects = 0
+        objects_list = []
+
+        for o in self.env.obstacle_list:
+            x1, y1 = o.body.position
+
+            if x < x1 < x + width and y < y1 < y + height:
+                num_objects += 1
+                objects_list.append(o)
+
+        return num_objects, objects_list
+
+    # def set_shape_color(self, obstacle):
+
+    #     xmin = self.densityhandler.x
+    #     xmax = self.densityhandler.x + self.densityhandler.width
+    #     ymin = self.densityhandler.y
+    #     ymax = self.densityhandler.y + self.densityhandler.height
+
+    #     # get body position
+    #     x, y = obstacle.body.position
+    #     # print(f"{i} body.position = {x}, {y}")
+
+    #     for j, s in enumerate(obstacle.shape_list):
+
+    #         # reindex shape
+    #         self.env.space.reindex_shape(s)
+
+    #         # get transform for shape attached to body
+    #         x1, y1 = s.center_of_gravity
+
+    #         # calculate shape position
+    #         x2 = x + x1
+    #         y2 = y + y1
+
+    #         if x2 < xmin:
+    #             s.color = out_color
+    #         elif x2 > xmax:
+    #             s.color = out_color
+    #         elif y2 < ymin:
+    #             s.color = out_color
+    #         elif y2 > ymax:
+    #             s.color = out_color
+    #         else:
+    #             s.color = in_color
+
     def update(self, dt):
+        # # update simulation one step
+        self.env.step()
 
-        self.diffusion_handler.handle_diffusion(self.particle_list)
-
-        self.timer.tick(
-            print_ms_per_tick=True
-        )  # update ticks since the world started
-        self.collision_handler.reset_collision_count()  # collision handler reset of counts
-
-        # reset overlap distance and collision list
-        self.sum_overlap_dist = 0
-        # self.collision_list = []
-
-        # advance simulation one step
-        self.space.step(dt)
-
-        # scoreboard.update_score(self.collision_list)
-        # scoreboard.update_overlap_score(self.sum_overlap_dist, self.selection_area)
-
-        # for obstacle in self.obstacle_list:
-        #     # obstacle.
-        #     pass
-        #    for shape in obstacle.body.shapes:
-        #         print(shape.shapes_collide())
-
-        # # # everything shifts a tiny tiny bit
-        # for obstacle in self.obstacle_list:
-        #     rand_int = random.randint(0, 3)
-
-        #     if rand_int == 0:
-        #         obstacle.move("up", step_distance=0.001)
-        #     if rand_int == 1:
-        #         obstacle.move("down", step_distance=0.001)
-        #     if rand_int == 2:
-        #         obstacle.move("left", step_distance=0.001)
-        #     if rand_int == 3:
-        #         obstacle.move("right", step_distance=0.001)
-
-        # subdomain
-        # go through all the objects in a list of selected objects one by one
-        # while len(self.selected_objects) > 0:
-
-        # for ob_num, obstacle in enumerate(self.selected_objects):
-        #     # note the old normalized overlap score
-        #     old_overlap = scoreboard.norm_overlap_score
-
-        #     # perform an action
-        #     obstacle.action(random.randint(0, 5))
-
-        #     # advance the simulation one step to allow new collisions to occur
-        #     self.space.step(dt)
-
-        #     # calculate new overlap score after collisions solved
-        #     scoreboard.update_overlap_score(self.sum_overlap_dist, self.selection_area)
-
-        #     #if self.sum_overlap_dist is worse than old_overlap, we need to undo that action
-        #     # first we have a bit of code here to give feedback to see if it is working.
-        #     if scoreboard.norm_overlap_score < old_overlap:
-        #         obstacle.undo()
-        #         self.space.step(dt)
+        
 
     def on_draw(self):
         self.clear()
-        self.collision_handler.draw_collision_label(
-            label_pos=(20, self.window_height - 35)
-        )
-        self.collision_handler.draw_area_label(
-            label_pos=(20, self.window_height - 50)
-        )
-        self.fps_display.draw()
-        # scoreboard.draw(label_pos=[20, window_height - 35])
-        self.timer.draw_elapsed_time(label_pos=[20, self.window_height - 20])
 
-        if self.sprite_handler.debug_draw == 0:
-            self.space.debug_draw(self.options)
-        else:
-            self.sprite_handler.draw(self.obstacle_list, batch=self.batch)
+        self.fps_display.draw()
+
+        if self.draw_shapes:
+            self.env.space.debug_draw(self.draw_options)
+
+            # list comprehension to draw all the attraction points
+            yay_dots = [
+                pyglet.shapes.Circle(
+                    dot[0], dot[1], radius=0.25, color=(250, 250, 230), batch=self.batch
+                )
+                for dot in self.env.attraction_point_coords
+            ]
+
+            self.batch.draw()
+        
+        # calculate the ensemble area
+        area_dict = self.env.get_ensemble_area()
+        print(
+            f'ensemble density = {round(area_dict["internal_area"] / (area_dict["ensemble_area"]), 2)}, interior_shape_area: {area_dict["internal_area"]}, total_shape_area: {area_dict["total_area"]}, ensemble_area: {area_dict["ensemble_area"]}'
+        )

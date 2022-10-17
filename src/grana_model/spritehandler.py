@@ -5,15 +5,16 @@ class SpriteHandler:
     def __init__(self):
         self.sprite_scale_factor = 0.03750000000000002
         self.rotation_factor = 0.0000000
-        self.debug_draw = 1
+        # self.debug_draw = 0
+        
 
-    def toggle_debug_draw(self):
-        self.debug_draw += 1
+    # def toggle_debug_draw(self):
+    #     self.debug_draw += 1
 
-        if self.debug_draw > 2:
-            self.debug_draw = 0
+    #     if self.debug_draw > 2:
+    #         self.debug_draw = 0
 
-        print(f"debug_draw: {self.debug_draw}")
+    #     print(f"debug_draw: {self.debug_draw}")
 
     def change_scale_factor(self, value):
         """modifies the sprite scale factor used for sprite drawing"""
