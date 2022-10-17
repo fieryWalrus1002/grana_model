@@ -6,6 +6,7 @@ from src.grana_model.objectdata import ObjectData
 from src.grana_model.densityhandler import DensityHandler
 import pymunk
 import pyglet
+import argparse
 
 REPS = 1
 
@@ -39,13 +40,7 @@ def main(gui: bool = False):
     batch = None
     object_data = ObjectData(pos_csv_filename="082620_SEM_final_coordinates.csv")
 
-    densityhandler = DensityHandler(
-        space=space,
-        x=200,
-        y=200,
-        width=100,
-        height=100,
-    )
+    densityhandler = DensityHandler(space=space, x=200, y=200, width=100, height=100,)
 
     spawner = Spawner(
         object_data=object_data,
@@ -119,12 +114,25 @@ def main(gui: bool = False):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(
+        description="tests experiment execution and data logging from command line"
+    )
+
+    parser.add_argument(
+        "-gui", help="launch gui", type=bool, default=False,
+    )
+
+    args = parser.parse_args()
+
     if GUI_STATE == False:
         # no window, just sim environment
         for i in range(0, REPS):
             # run the sim a given number of reps
             print(f"run {i}/{REPS}")
-            main(gui=GUI_STATE)
+            # main(gui=GUI_STATE)
+            main(**vars(args))
+
     else:
         # if GUI_STATE == True, run it once with a window
-        main(gui=GUI_STATE)
+        main(**vars(args))
+
