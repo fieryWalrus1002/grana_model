@@ -106,3 +106,6 @@ class DensityHandler:
         shape.color = (0, 0, 0, 0)
         self.space.add(body, shape)
         return shape
+        
+    def get_object_area(self):
+        """ gets the area of all objects within the designated ensemble area"""

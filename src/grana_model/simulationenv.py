@@ -19,10 +19,14 @@ Todo:
    http://google.github.io/styleguide/pyguide.html
 
 """
+from distutils.log import debug
 import pymunk
 import time
 from datetime import datetime
 import csv
+from src.grana_model.overlapagent import OverlapAgent, ExpandingCircle
+
+OA_TIMELIMIT = 1000
 
 
 class SimulationEnvironment:
@@ -35,16 +39,19 @@ class SimulationEnvironment:
         object_data,
         attraction_handler,
         densityhandler,
+        overlap_handler,
         step_limit: int,
         dt: float = 0.01666667,
-        damping: float = 0.1,
+        damping: float = 0.9,
         gui: bool = False,
+        use_overlap_agent: bool = False,
     ):
         # simulation components
         self.space = space
         self.attraction_handler = attraction_handler
         self.spawner = spawner
         self.collision_handler = self.create_sensor_collision_handler()
+        self.overlap_handler = overlap_handler
         self.densityhandler = densityhandler
         self.object_data = object_data
         self.obstacle_list, self.particle_list, _ = self.spawner.setup_model()
@@ -52,6 +59,7 @@ class SimulationEnvironment:
         self.boundaries = self.densityhandler.spawn_boundaries()
         self.gui = gui
         self.steps = 0
+        self.use_overlap_agent = use_overlap_agent
 
         # simulation variables
         self.active = True
@@ -85,7 +93,30 @@ class SimulationEnvironment:
         while self.active:
             self.step()
 
+        if self.use_overlap_agent:
+            area_strategy = expanding_circle = ExpandingCircle(
+                origin_point=(300, 300),
+                object_list=self.obstacle_list,
+                zone_distances=[30, 60, 90, 120],
+            )
+            overlapagent = OverlapAgent(
+                self.space,
+                self.obstacle_list,
+                self.overlap_handler,
+                time_limit=OA_TIMELIMIT,
+                area_strategy=area_strategy,
+                notes=f"_{self.spawner.shape_type}_num_{len(self.obstacle_list)}_",
+            )
+        overlap = 10000
+
+        while overlap > 5:
+            overlapagent.run(debug=True)
+            overlap = overlapagent.get_current_overlap_distance()
+            print(f"overlap: {overlap}")
+
     def step(self):
+        self.overlap_handler.reset_collision_count()
+
         self.steps += 1
 
         if self.attraction_handler.active:
@@ -104,7 +135,9 @@ class SimulationEnvironment:
         self.active = self.check_for_active()
 
         if self.steps % 20 == 0:
-            print("step: ", self.steps)
+            print(
+                f"step {self.steps}, overlap: {self.overlap_handler.overlap_distance}"
+            )
 
         if self.gui:
             # # get a list of attraction point coordinates to draw during on_draw() call
@@ -112,14 +145,20 @@ class SimulationEnvironment:
                 self.obstacle_list
             )
         if self.steps > self.step_limit:
-            filename = (
-                f"lhcii_export_coords/{self.spawner.shape_type}_limit_{self.step_limit}_coords".replace(
-                    ".", "p"
-                )
-                + ".csv"
+
+            self.export_coordinates(
+                self.obstacle_list, filename=self.get_export_filename()
             )
-            self.export_coordinates(self.obstacle_list, filename=filename)
             self.active = False
+
+    def get_export_filename(self):
+        filename = (
+            f"lhcii_export_coords/{self.spawner.shape_type}_limit_{self.step_limit}_coords".replace(
+                ".", "p"
+            )
+            + ".csv"
+        )
+        return filename
 
     def fight(self):
         return "we fight now"

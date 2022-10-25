@@ -31,12 +31,11 @@ import random
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-
+import os
 import pymunk
 
-from collisionhandler import CollisionHandler
-from psiistructure import PSIIStructure
-from simulationenv import SimulationEnvironment
+from src.grana_model.collisionhandler import CollisionHandler
+from src.grana_model.psiistructure import PSIIStructure
 
 # from time import process_time, strftime
 
@@ -133,11 +132,14 @@ class ExpandingCircle(AreaStrategy):
     """divides all the objects into four bands and will return lists as requested"""
 
     def __init__(
-        self, object_list: list, origin_point: tuple[float, float] = (200, 200)
+        self,
+        object_list: list,
+        origin_point: tuple[float, float] = (200, 200),
+        zone_distances: list[float] = [89, 127, 155, 178, 200],
     ):
         self.origin_point = origin_point
         self.index = -1
-        self.zone_distances = [89, 127, 155, 178, 200]
+        self.zone_distances = zone_distances
         self.object_list = object_list
         self.zone_list = self.create_zones(self.object_list)
 
@@ -227,12 +229,14 @@ class OverlapAgent:
         collision_handler: CollisionHandler,
         time_limit: int = 1000,
         area_strategy: AreaStrategy = None,
+        notes: str = "",
     ):
         self.time_limit = time_limit
         self.time_left = time_limit
         self.space = space
         self.overlap_distance = 0.0
         self.collision_handler = collision_handler
+        self.notes = notes
 
         if area_strategy is not None:
             print(f"using {area_strategy}")
@@ -240,7 +244,8 @@ class OverlapAgent:
         else:
             print("no area strategy provided, using ExpandingCircle")
             self.area_strategy = ExpandingCircle(
-                object_list, origin_point=(200, 200),
+                object_list,
+                origin_point=(300, 300),
             )
 
     def run(self, debug=False):
@@ -290,19 +295,18 @@ class OverlapAgent:
         self.space.step(0.01)
         self.overlap_distance = self.collision_handler.overlap_distance
 
-    def export_coordinates(self, zone_num, zone_list, mean_overlap):
+    def get_current_overlap_distance(self):
+        return self._update_space()
+
+    def get_export_filename(self):
         now = datetime.now()
         dt_string = now.strftime("%d%m%Y_%H%M%S")
-        filename = (
-            Path.cwd()
-            / "src"
-            / "grana_model"
-            / "res"
-            / "grana_coordinates"
-            / f"{dt_string}_{zone_num}_overlap_{int(mean_overlap)}_data.csv"
-        )
 
-        with open(filename, "w", newline="") as f:
+        return f"{os.getcwd()}/src/grana_model/res/grana_coordinates/{dt_string}_overlap_{int(self.collision_handler.overlap_distance)}{self.notes}.csv"
+
+    def export_coordinates(self, zone_num, zone_list, mean_overlap):
+
+        with open(self.get_export_filename(), "w", newline="") as f:
             write = csv.writer(f)
             # write the headers
             write.writerow(["type", "x", "y", "angle", "area"])

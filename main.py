@@ -4,20 +4,23 @@ from src.grana_model.attractionhandler import AttractionHandler
 from src.grana_model.spawner import Spawner
 from src.grana_model.objectdata import ObjectData
 from src.grana_model.densityhandler import DensityHandler
+from src.grana_model.collisionhandler import CollisionHandler
 import pymunk
+from src.grana_model.overlapagent import OverlapAgent
 import pyglet
 from itertools import product
 
 REPS = 1
 
 # constants for sim window, if gui == True
+OVERLAP_AGENT_STATE = True
 GUI_STATE = False
 SIM_WIDTH = 500
 SIM_HEIGHT = 500
 SHAPE_COMBOS = [
-    f"lhcii_circle_{r}_{n}" for (r, n) in product([3.75, 4.5], range(4, 100, 20))
+    f"lhcii_circle_{r}_{n}" for (r, n) in product([3.75, 4.5], range(94, 100, 20))
 ]
-STEP_LIMIT = 10000
+STEP_LIMIT = 500
 
 
 def configure_space(threaded: bool = False, damping: float = 0.1):
@@ -26,13 +29,20 @@ def configure_space(threaded: bool = False, damping: float = 0.1):
     return space
 
 
-def main(gui: bool = False, shape_type: str = "simple", step_limit: int = STEP_LIMIT):
+def main(
+    gui: bool = False,
+    shape_type: str = "simple",
+    step_limit: int = STEP_LIMIT,
+    use_overlap_agent: bool = False,
+):
     attraction_handler = AttractionHandler(
         thermove_enabled=False, attraction_enabled=False
     )
     space = configure_space(threaded=True, damping=0.9)
     batch = None
     object_data = ObjectData(pos_csv_filename="082620_SEM_final_coordinates.csv")
+
+    overlap_handler = CollisionHandler(space)
 
     densityhandler = DensityHandler(
         space=space,
@@ -88,8 +98,10 @@ def main(gui: bool = False, shape_type: str = "simple", step_limit: int = STEP_L
         object_data=object_data,
         attraction_handler=attraction_handler,
         densityhandler=densityhandler,
+        overlap_handler=overlap_handler,
         gui=gui,
         step_limit=step_limit,
+        use_overlap_agent=use_overlap_agent,
     )
 
     if gui:
@@ -103,7 +115,6 @@ def main(gui: bool = False, shape_type: str = "simple", step_limit: int = STEP_L
             env=env,
         )
 
-        # fps_display = pyglet.window.FPSDisplay(window=window)
         pyglet.clock.schedule_interval(window.update, 1.0 / 60.0)
         print("run app")
         pyglet.app.run()
@@ -122,7 +133,12 @@ if __name__ == "__main__":
         for i in range(REPS):
             for j in SHAPE_COMBOS:
                 print(f"starting {j}, rep {i}")
-                main(gui=False, shape_type=j, step_limit=STEP_LIMIT)
+                main(
+                    gui=False,
+                    shape_type=j,
+                    step_limit=STEP_LIMIT,
+                    use_overlap_agent=OVERLAP_AGENT_STATE,
+                )
 
     else:
         # if GUI_STATE == True, run it once with a window

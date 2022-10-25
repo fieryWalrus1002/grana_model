@@ -14,8 +14,9 @@ import csv
 import datetime
 
 from pyparsing import col
-from .dcalibrator import DCalibrator
+from src.grana_model.dcalibrator import DCalibrator
 
+from src.grana_model.utils import pos_in_circle, rand_angle
 
 MAX_V = 1000
 V_SCALAR = 10.0
@@ -123,6 +124,7 @@ class AttractionPoint:
         # print(f'vm: {vm}, vhat: {v_hat}, vmag: {v_mag}, v3: {v3}')
         return Vec2d(v3[0], v3[1])
 
+
 class PSIIStructure:
     def __init__(
         self,
@@ -134,7 +136,7 @@ class PSIIStructure:
         angle: float,
         structure_dict: dict,
         use_sprites: bool = True,
-        circle_radius: int = 3, # size of shape circle
+        circle_radius: int = 3,  # size of shape circle
     ):
         self.active = True
         self.circle_radius = circle_radius
@@ -153,23 +155,20 @@ class PSIIStructure:
         self.time_step = 0
         self.current_xy = pos
         self.time_per_step = structure_dict["time_per_step"]
-        
-        self.dcalibrator = DCalibrator(structure_dict)      
-    
-        
+
+        self.dcalibrator = DCalibrator(structure_dict)
+
         self.last_action = {
             "action": "rotate",
             "old_value": angle,
             "new_value": angle,
         }
         self.new_scale = 100
-        
-        
+
         self.step_history = []
         self.last_pos = self.origin_xy
-        
+
         self.rot_history = []
-        
 
         self.unpack_structure_dict(structure_dict)
 
@@ -191,7 +190,7 @@ class PSIIStructure:
                 "diffusion_scalar",
                 "x",
                 "y",
-                "theta"
+                "theta",
             ]
         )
 
@@ -329,8 +328,6 @@ class PSIIStructure:
         else:
             self.displacement.to_csv(filename, mode="a", index=False, header=False)
 
-
-
     def get_distance_scalar(self, distance_scalar: str, threshold: float):
         if distance_scalar == "linear":
             return LinearScaledMagnitude(threshold)
@@ -366,8 +363,8 @@ class PSIIStructure:
         self.body.angle += t
 
     def log_step_distance(self, n: int = 10):
-        """ take the current position and compare distance traveled from
-        last position. Log in self.step_history """
+        """take the current position and compare distance traveled from
+        last position. Log in self.step_history"""
 
         v = self.vec_mag(self.last_pos, self.body.position)
         self.step_history.append(v)
@@ -375,7 +372,9 @@ class PSIIStructure:
         dtheta = np.abs(self.body.angle - self.last_angle)
         self.rot_history.append(dtheta)
 
-    def apply_vectors(self, attraction_enabled: bool = False, thermove_enabled: bool = False) -> None:
+    def apply_vectors(
+        self, attraction_enabled: bool = False, thermove_enabled: bool = False
+    ) -> None:
         if self.active:
             # calculate movement in this step and add to step_history
             self.log_step_distance()
@@ -391,10 +390,11 @@ class PSIIStructure:
             if thermove_enabled:
                 # generate thermal movement vectors
                 thermal_movement = self.get_thermal_movement(
-                    radius=self.diffusion_scalar)
+                    radius=self.diffusion_scalar
+                )
             else:
                 thermal_movement = Vec2d(0, 0)
-            
+
             if attraction_enabled:
                 # get sum of all attraction vectors in vector_list
                 vec_sum = Vec2d(0, 0)
@@ -404,23 +404,25 @@ class PSIIStructure:
 
                 # create unit vector of vec_sum
                 vhat, _ = self.vec_norm(vec_sum, Vec2d(0, 0))
-            else: 
+            else:
                 vhat = Vec2d(0, 0)
 
             # apply both vhat and thermal_movement
-            self.body.apply_impulse_at_local_point(vhat)            
+            self.body.apply_impulse_at_local_point(vhat)
             self.body.apply_impulse_at_local_point(thermal_movement)
 
             # IF a step period is done, calibrate d for rotation and diffusion
-            if self.time_step % self.average_step_over == 0:    
-                self.diffusion_scalar, self.rotation_scalar = self.dcalibrator.calibrate_d(
-                    diffusion_scalar=self.diffusion_scalar, 
-                    rotation_scalar=self.rotation_scalar, 
-                    step_history=self.step_history, 
-                    rot_history=self.rot_history
+            if self.time_step % self.average_step_over == 0:
+                (
+                    self.diffusion_scalar,
+                    self.rotation_scalar,
+                ) = self.dcalibrator.calibrate_d(
+                    diffusion_scalar=self.diffusion_scalar,
+                    rotation_scalar=self.rotation_scalar,
+                    step_history=self.step_history,
+                    rot_history=self.rot_history,
                 )
-            
-                
+
     def random_pos_in_structure(self, r: float = 1.0):
         """returns a random Vec2d with a radius of r  for impulse application direction"""
         return Vec2d((random.random() - 0.5) * r, (random.random() - 0.5) * r)
@@ -544,9 +546,9 @@ class PSIIStructure:
 
     def create_shape_list(self, shape_type):
         """creates pymunk shape objects, given a shape type and a shape coordinate. return slist of shapes"""
-        
+
         if shape_type == "simple":
-            coord_list = self.obj_dict["shapes_simple"]        
+            coord_list = self.obj_dict["shapes_simple"]
         elif shape_type == "complex":
             coord_list = self.obj_dict["shapes_compound"]
         else:
@@ -556,10 +558,12 @@ class PSIIStructure:
                 coord_list = [self.get_circle_coords_from_csv(filename=filename)]
             except ValueError:
                 print("shape type not recognized")
-                raise ValueError          
+                raise ValueError
 
-        return [self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list]
-        
+        return [
+            self._create_shape(shape_coord=shape_coord) for shape_coord in coord_list
+        ]
+
     def _create_shape(self, shape_coord: tuple):
         """creates a shape"""
         my_shape = Poly(self.body, vertices=shape_coord)
@@ -576,7 +580,7 @@ class PSIIStructure:
         an argument to eval(), will create all the compound or simple
         shapes needed to define complex structures and
         add them to the space along with self.body"""
-    
+
         shape_list = self.create_shape_list(shape_type)
 
         return (
@@ -586,7 +590,7 @@ class PSIIStructure:
 
     def get_circle_coords_from_csv(self, filename):
         df = pd.read_csv(f"src/grana_model/res/shapes/{filename}")
-        
+
         return df.values.tolist()
 
     def update_sprite(self, sprite_scale_factor, rotation_factor):
@@ -607,9 +611,46 @@ class PSIIStructure:
             scale = MAX_V / body_velocity_length
             body.velocity = body.velocity * scale
 
-        
-        
+    def undo(self):
+        if self.last_action["action"] == "rotate":
+            self.body.angle = self.last_action["old_value"]
+        if self.last_action["action"] == "move":
+            self.body.position = self.last_action["old_value"]
 
-    
-    
-    
+    def action(self, action_num):
+        if action_num == 1:
+            self.move()
+
+        if action_num == 2:
+            self.rotate(degree_range=90.0)
+
+    def _save_action(self, action: str, old_value, new_value):
+        self.last_action = {
+            "action": action,
+            "old_value": old_value,
+            "new_value": new_value,
+        }
+
+    def rotate(self, degree_range: float):
+        """rotates the object to a random angle, plus or minus half degree_range"""
+        current_angle = self.body.angle
+
+        self.body.angle = current_angle + rand_angle(degree_range=degree_range)
+
+        self._save_action("rotate", current_angle, self.body.angle)
+
+    def move(self, tether_radius: float = 1.0):
+        """handles moving the object to a new location within its tether_radius.
+        Also saves the current position of the object before moving it, so we can restore it if
+        necessary, via undo()
+
+        Parameters:
+        tether_radius: the maximum distance from the original location of the object upon instantiation.
+        """
+        start_pos = self.body.position
+
+        self.body.position = pos_in_circle(
+            origin=self.body.position, radius=tether_radius
+        )
+
+        self._save_action("move", start_pos, self.body.position)
